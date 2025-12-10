@@ -2,6 +2,9 @@
 // 🌐 API Base URL Setup
 // Same as your original format
 // ==============================
+
+import axios from "axios";
+
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5173";
 
 if (import.meta.env.MODE === "development") {
@@ -62,6 +65,48 @@ export async function apiRequest(endpoint, method = "GET", data = null, queryPar
     throw error;
   }
 }
+
+// export async function getLatestUniqueId() {
+//   return await apiRequest("/indent/latest/unique-id", "GET");
+// }
+
+export async function getLatestUniqueId() {
+  const response = await apiRequest("/indent/latest/unique-id", "GET");
+
+  console.log("Latest Unique ID from backend:", response);
+
+  return response;
+}
+
+// let globalChangedRows = {};  // stores last "changedRows" data
+
+// export const setChangedRowsForLogging = (rows) => {
+//   globalChangedRows = rows;  // update when purchase page sends data
+// };
+
+export const updatePurchaseRow = async (id, updatedData) => {
+  try {
+    // console.log("===============================================");
+    // console.log("📤 ALL CHANGED ROWS BEING SENT:");
+    // console.log(JSON.stringify(globalChangedRows, null, 2));
+    // console.log("===============================================");
+
+    // console.log("📤 CURRENT API CALL → Sending update to backend");
+    // console.log("➡️ ID:", id);
+    // console.log("➡️ Payload:", JSON.stringify(updatedData, null, 2));
+
+    //const response = await axios.put(`/indent/purchase/update/${id}`, updatedData);
+    const response = await apiRequest(`/indent/purchase/update/${id}`, "PUT", updatedData);
+
+    console.log("✅ Backend Response:", response.data);
+    console.log("===============================================");
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error updating purchase row:", error);
+    throw error;
+  }
+};
 
 /**
  * =====================================================

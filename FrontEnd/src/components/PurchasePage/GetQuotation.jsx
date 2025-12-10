@@ -1,0 +1,704 @@
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import {
+  FaFileAlt,
+  FaBalanceScale,
+  FaCheckCircle,
+  FaHandshake,
+  FaFileSignature,
+  FaTruck,
+  FaMoneyCheckAlt,
+  FaShoppingCart,
+  FaShip,
+  FaFileUpload,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+//import { getAllIndentForms, updatePurchaseRow, setChangedRowsForLogging } from "../../api/IndentForm.api";
+import { getAllIndentForms, updatePurchaseRow } from "../../api/IndentForm.api";
+
+const navLinks = {
+  "Executive FMS Section": [
+    { name: "Get Quotation", icon: <FaFileAlt /> },
+    { name: "Comparison Statement", icon: <FaBalanceScale /> },
+    { name: "Technical Approval", icon: <FaCheckCircle /> },
+    { name: "Commercial Negotiation", icon: <FaHandshake /> },
+    { name: "PO Generation", icon: <FaFileSignature /> },
+    { name: "PC and Payment", icon: <FaMoneyCheckAlt /> },
+    { name: "Transport", icon: <FaShip /> },
+    { name: "Material Received", icon: <FaTruck /> },
+  ],
+  //"PC Follow UP Section": [],
+};
+
+export default function PurchasePage() {
+  const navigate = useNavigate();
+  const [selectedOption, setSelectedOption] = useState("Get Quotation");
+  const [tableData, setTableData] = useState([]);
+  const [changedRows, setChangedRows] = useState({});
+  const latestDataRef = useRef([]); // <- always keep freshest data here
+  const [saving, setSaving] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState({});
+  const [pdfPreview, setPdfPreview] = useState({});
+
+  // keep ref in-sync whenever state changes
+  useEffect(() => {
+    latestDataRef.current = tableData;
+  }, [tableData]);
+
+  useEffect(() => {
+    fetchIndentForms();
+    const link = document.createElement("link");
+    link.href = "https://fonts.googleapis.com/css2?family=Agu+Display&display=swap";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+    // cleanup not required for this example
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("role");
+    navigate("/", { replace: true });
+    window.location.reload();
+  };
+
+  // Ensures we update state using functional updater and also return updated for logging
+  const handleFieldChange = (id, field, value) => {
+    setTableData(prev =>
+      prev.map(r => (r._id === id ? { ...r, [field]: value } : r))
+    );
+
+    // Track changed rows
+    setChangedRows(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
+    }));
+
+    console.log("Updated Field:", { id, field, value });
+  };
+
+
+  // Fetch data and initialize both state and the ref
+  const fetchIndentForms = async () => {
+    try {
+      const response = await getAllIndentForms("");
+      if (response && response.success && response.data) {
+        console.log("📥 Data fetched from backend:", response.data);
+        setTableData(response.data);
+        latestDataRef.current = response.data;
+      } else {
+        console.warn("⚠️ getAllIndentForms returned unexpected shape:", response);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching Purchase data:", error);
+    }
+  };
+
+  // Submit uses latestDataRef.current (always freshest snapshot) to build payloads
+  const handleSubmitUpdates = async () => {
+    if (saving) return;
+
+    if (Object.keys(changedRows).length === 0) {
+      alert("No changes to save.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      console.log("📤 Sending Changed Rows:", changedRows);
+
+      //setChangedRowsForLogging(changedRows);
+      for (const [id, changes] of Object.entries(changedRows)) {
+        await updatePurchaseRow(id, changes);
+        console.log("Updated ID:", id, "Data Sent:", changes);
+      }
+
+      alert("✅ Updates Saved Successfully!");
+
+      // Refresh data from backend
+      await fetchIndentForms();
+
+      // Reset changedRows after successful update
+      setChangedRows({});
+    } catch (err) {
+      console.error("❌ Save Error:", err);
+      alert("Error saving changes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // const handlePdfUpload = async (rowId, file) => {
+  //   if (!file) return;
+
+  //   // Only allow PDFs
+  //   if (file.type !== "application/pdf") {
+  //     alert("Only PDF files can be uploaded.");
+  //     return;
+  //   }
+
+  //   try {
+  //     setUploading(true);
+
+  //     const response = await uploadComparisonPDF(rowId, file);
+  //     console.log("PDF Upload Response:", response);
+
+  //     if (!response.fileUrl) {
+  //       alert("Upload failed: no file URL returned.");
+  //       return;
+  //     }
+
+  //     alert("PDF uploaded successfully!");
+
+  //     const dbRes = await updatePurchaseRow(rowId, { comparisonPdf: response.fileUrl });
+
+  //     if (!dbRes.success) {
+  //       console.warn("Database update failed.");
+  //     }
+
+  //     fetchIndentForms(); // Refresh table UI
+
+  //   } catch (err) {
+  //     console.error("PDF Upload Error:", err?.response?.data || err);
+  //     alert("Failed to upload PDF.");
+  //   } finally {
+  //     setUploadedFiles(false);
+  //   }
+  // };
+
+  return (
+    <div className="min-h-screen bg-gray-100 font-poppins">
+      {/* ------------------ TOP NAVBAR ------------------ */}
+      <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
+        <div className="flex items-center gap-4">
+          <FaShoppingCart className="text-red-600 text-5xl" />
+          <h1
+            className="text-4xl font-bold tracking-wide text-gray-900"
+            style={{ fontFamily: "'Agu Display', sans-serif" }}
+          >
+            PURCHASE MANAGEMENT SYSTEM
+          </h1>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="px-5 py-2 bg-red-600 text-white font-medium rounded-full shadow-md hover:bg-red-700 active:scale-95 transition"
+        >
+          Logout
+        </button>
+      </nav>
+
+      {/* ------------------ SIDEBAR ------------------ */}
+      <aside className="w-64 bg-transparent text-black p-6 float-left h-screen">
+        {Object.entries(navLinks).map(([section, links]) => (
+          <div key={section} className="mb-8">
+            <h2 className="text-lg font-bold mb-4">{section}</h2>
+
+            <ul className="space-y-4">
+              {links.length > 0 ? (
+                links.map(link => {
+                  const isSelected = selectedOption === link.name;
+                  return (
+                    <li
+                      key={link.name}
+                      onClick={() => setSelectedOption(link.name)}
+                      className={`
+                        flex items-center gap-3 p-3 rounded-xl cursor-pointer transition shadow-sm
+                        bg-gray-100 hover:bg-red-100
+                        ${isSelected ? "bg-red-100 border-l-4 border-red-500 text-red-700" : ""}
+                      `}
+                    >
+                      <span className="text-xl">{link.icon}</span>
+                      <span className="font-medium">{link.name}</span>
+                    </li>
+                  );
+                })
+              ) : (
+                <li className="text-gray-500 italic">No links</li>
+              )}
+            </ul>
+          </div>
+        ))}
+      </aside>
+
+      {/* ------------------ MAIN CONTENT ------------------ */}
+      <main className="ml-64 p-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-3xl shadow-md p-8"
+        >
+          <div className="mb-8 p-4 bg-red-600 rounded-xl shadow-md text-center">
+            <h1 className="text-3xl font-bold text-white">Purchase</h1>
+          </div>
+
+          <div className="w-full overflow-x-auto">
+            <table className="min-w-max border border-gray-200 rounded-xl whitespace-nowrap">
+              {/* <thead className="bg-gray-200 text-left rounded-t-xl">
+                <tr>
+                  <th className="px-4 py-3 border-b">Date</th>
+                  <th className="px-4 py-3 border-b">Site</th>
+                  <th className="px-4 py-3 border-b">Unique ID</th>
+                  <th className="px-4 py-3 border-b">Indent Number</th>
+                  <th className="px-4 py-3 border-b">Item Number</th>
+                  <th className="px-4 py-3 border-b">Item Description</th>
+                  <th className="px-4 py-3 border-b">UOM</th>
+                  <th className="px-4 py-3 border-b">Total Quantity</th>
+                  <th className="px-4 py-3 border-b">Submitted By</th>
+                  <th className="px-4 py-3 border-b">Section</th>
+
+                  {selectedOption === "Get Quotation" && (
+                    <>
+                      <th className="px-4 py-3 border-b text-red-700">Get Quotation Status</th>
+                      <th className="px-4 py-3 border-b text-red-700">Doer Status</th>
+                    </>
+                  )}
+
+                  {selectedOption === "Technical Approval" && (
+                    <>
+                      <th className="px-4 py-3 border-b text-red-700">Technical Approval Status</th>
+                      <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
+                    </>
+                  )}
+
+                  {selectedOption === "Commercial Negotiation" && (
+                    <>
+                      <th className="px-4 py-3 border-b text-red-700">Finalize Terms Status</th>
+                      <th className="px-4 py-3 border-b text-red-700">Get Approval</th>
+                      <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
+                    </>
+                  )}
+
+                  {selectedOption === "PO Generation" && (
+                    <>
+                      <th className="px-4 py-3 border-b text-red-700">PO Generation Status</th>
+                      <th className="px-4 py-3 border-b text-red-700">PO Number</th>
+                      <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
+                      <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
+                    </>
+                  )}
+
+                  {selectedOption === "Material Received" && (
+                    <>
+                      <th className="px-4 py-3 border-b text-red-700">GRN to Store</th>
+                    </>
+                  )}
+                </tr>
+              </thead> */}
+
+              <thead className="bg-gray-200 text-left rounded-t-xl">
+                <tr>
+
+                  {/* ------------------------- COMPARISON STATEMENT ------------------------- */}
+                  {selectedOption === "Comparison Statement" ? (
+                    <>
+                      <th className="px-4 py-3 border-b">Date</th>
+                      <th className="px-4 py-3 border-b">Unique ID</th>
+                      <th className="px-4 py-3 border-b text-red-700">Upload PDF</th>
+                    </>
+                  ) : (
+                    <>
+                      {/* ------------------------- DEFAULT COLUMNS ------------------------- */}
+                      <th className="px-4 py-3 border-b">Date</th>
+                      <th className="px-4 py-3 border-b">Site</th>
+                      <th className="px-4 py-3 border-b">Unique ID</th>
+                      <th className="px-4 py-3 border-b">Indent Number</th>
+                      <th className="px-4 py-3 border-b">Item Number</th>
+                      <th className="px-4 py-3 border-b">Item Description</th>
+                      <th className="px-4 py-3 border-b">UOM</th>
+                      <th className="px-4 py-3 border-b">Total Quantity</th>
+                      <th className="px-4 py-3 border-b">Submitted By</th>
+                      <th className="px-4 py-3 border-b">Section</th>
+
+                      {/* ------------------------- CONDITIONAL HEADERS ------------------------- */}
+                      {selectedOption === "Get Quotation" && (
+                        <>
+                          <th className="px-4 py-3 border-b text-red-700">Get Quotation Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Doer Status</th>
+                        </>
+                      )}
+
+                      {selectedOption === "Technical Approval" && (
+                        <>
+                          <th className="px-4 py-3 border-b text-red-700">Technical Approval Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
+                        </>
+                      )}
+
+                      {selectedOption === "Commercial Negotiation" && (
+                        <>
+                          <th className="px-4 py-3 border-b text-red-700">Finalize Terms Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Get Approval</th>
+                          <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
+                        </>
+                      )}
+
+                      {selectedOption === "PO Generation" && (
+                        <>
+                          <th className="px-4 py-3 border-b text-red-700">PO Generation Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">PO Date</th>
+                          <th className="px-4 py-3 border-b text-red-700">PO Number</th>
+                          <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
+                          <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
+                          <th className="px-4 py-3 border-b text-red-700">Payment Condition</th>
+                        </>
+                      )}
+
+                      {selectedOption === "Material Received" && (
+                        <>
+                          <th className="px-4 py-3 border-b text-red-700">GRN to Store</th>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                </tr>
+              </thead>
+
+              <tbody>
+  {tableData.map((row, index) => (
+    <>
+      {selectedOption === "Comparison Statement" ? (
+        /* ------------- ONLY FOR COMPARISON STATEMENT ------------- */
+        <tr
+          key={row._id || index}
+          className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-red-50 transition`}
+        >
+          {/* Date */}
+          <td className="px-4 py-2 border-b">{row.date}</td>
+
+          {/* Unique ID */}
+          <td className="px-4 py-2 border-b">{row.uniqueId}</td>
+
+          {/* PDF Upload Button */}
+          <td className="px-4 py-2 border-b flex items-center gap-3">
+
+  {/* Hidden File Input */}
+  <input
+    id={`pdfInput_${row._id}`}
+    type="file"
+    accept="application/pdf"
+    className="hidden"
+    onChange={(e) => {
+      const file = e.target.files[0];
+
+      if (file) {
+        const previewUrl = URL.createObjectURL(file);
+
+        setPdfPreview(prev => ({
+          ...prev,
+          [row._id]: previewUrl
+        }));
+
+        setUploadedFiles(prev => ({
+          ...prev,
+          [row._id]: file.name
+        }));
+
+        handlePdfUpload(row._id, file);
+      }
+    }}
+  />
+
+  {/* Upload Button */}
+  <button
+    onClick={() =>
+      document.getElementById(`pdfInput_${row._id}`).click()
+    }
+    className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
+  >
+    <FaFileUpload /> Upload
+  </button>
+
+  {/* Filename Button (Yellow #F5D038) */}
+  {uploadedFiles[row._id] && (
+    <button
+      onClick={() => window.open(pdfPreview[row._id], "_blank")}
+      className="px-3 py-1 rounded font-medium transition"
+      style={{
+        backgroundColor: "#F5D038",
+        color: "#000",
+      }}
+    >
+      {uploadedFiles[row._id]}
+    </button>
+  )}
+
+  {/* Google Drive Uploaded File Button */}
+  {row.comparisonPdf && (
+    <button
+      onClick={() => window.open(row.comparisonPdf, "_blank")}
+      className="px-3 py-1 rounded font-medium transition"
+      style={{
+        backgroundColor: "#F5D038",
+        color: "#000",
+      }}
+    >
+      View Uploaded PDF
+    </button>
+  )}
+</td>
+
+
+        </tr>
+      ) : (
+        /* ------------- ALL OTHER SECTIONS (DEFAULT TABLE) ------------- */
+        <tr
+          key={row._id || index}
+          className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-red-50 transition`}
+        >
+          <td className="px-4 py-2 border-b">{row.date}</td>
+          <td className="px-4 py-2 border-b">{row.site}</td>
+          <td className="px-4 py-2 border-b">{row.uniqueId}</td>
+          <td className="px-4 py-2 border-b">{row.indentNumber}</td>
+          <td className="px-4 py-2 border-b">{row.itemNumber}</td>
+          <td className="px-4 py-2 border-b">{row.itemDescription}</td>
+          <td className="px-4 py-2 border-b">{row.uom}</td>
+          <td className="px-4 py-2 border-b">{row.totalQuantity}</td>
+          <td className="px-4 py-2 border-b">{row.submittedBy}</td>
+          <td className="px-4 py-2 border-b">{row.section}</td>
+
+          {/* GET QUOTATION */}
+          {selectedOption === "Get Quotation" && (
+            <>
+              <td className="px-4 py-2 border-b">
+                <select
+                  className="border p-1 rounded"
+                  value={row.quotationStatus ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(row._id, "quotationStatus", e.target.value)
+                  }
+                >
+                  <option value="">--Select--</option>
+                  <option value="Hold">Hold</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Done">Done</option>
+                </select>
+              </td>
+
+              <td className="px-4 py-2 border-b">
+                <select
+                  className="border p-1 rounded"
+                  value={row.doerStatus ?? ""}
+                  onChange={(e) => handleFieldChange(row._id, "doerStatus", e.target.value)}
+                >
+                  <option value="">--Select--</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Working">Working</option>
+                  <option value="Done">Done</option>
+                </select>
+              </td>
+            </>
+          )}
+
+          {/* TECHNICAL APPROVAL */}
+          {selectedOption === "Technical Approval" && (
+            <>
+              <td className="px-4 py-2 border-b">
+                <select
+                  className="border p-1 rounded"
+                  value={row.technicalApprovalStatus ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(row._id, "technicalApprovalStatus", e.target.value)
+                  }
+                >
+                  <option value="">--Select--</option>
+                  <option value="Hold">Hold</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Done">Done</option>
+                  <option value="Reopen">Reopen</option>
+                </select>
+              </td>
+
+              <td className="px-4 py-2 border-b">
+                <input
+                  type="text"
+                  className="border p-1 rounded"
+                  value={row.approverName ?? ""}
+                  onChange={(e) => handleFieldChange(row._id, "approverName", e.target.value)}
+                />
+              </td>
+            </>
+          )}
+
+          {/* COMMERCIAL NEGOTIATION */}
+          {selectedOption === "Commercial Negotiation" && (
+            <>
+              <td className="px-4 py-2 border-b">
+                <select
+                  className="border p-1 rounded"
+                  value={row.finalizeTermsStatus ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(row._id, "finalizeTermsStatus", e.target.value)
+                  }
+                >
+                  <option value="">--Select--</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Finalized">Finalized</option>
+                </select>
+              </td>
+
+              <td className="px-4 py-2 border-b">
+                <select
+                  className="border p-1 rounded"
+                  value={row.getApproval ?? ""}
+                  onChange={(e) => handleFieldChange(row._id, "getApproval", e.target.value)}
+                >
+                  <option value="">--Select--</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </td>
+
+              <td className="px-4 py-2 border-b">
+                <select
+                  className="border p-1 rounded"
+                  value={row.approverName2 ?? ""}
+                  onChange={(e) => handleFieldChange(row._id, "approverName2", e.target.value)}
+                >
+                  <option value="">--Select--</option>
+                  <option value="Tapan Agarwala">Tapan Agarwal</option>
+                  <option value="Rohit Agarwala">Rohit Agarwala</option>
+                  <option value="Hiru Ghosh">Hiru Ghosh</option>
+                  <option value="GM Sir">GM Sir</option>
+                </select>
+              </td>
+            </>
+          )}
+
+          {/* PO GENERATION */}
+          {selectedOption === "PO Generation" && (
+  <>
+    {/* PO Generation Status */}
+    <td className="px-4 py-2 border-b">
+      <select
+        className="border p-1 rounded"
+        value={row.poGenerationStatus ?? ""}
+        onChange={(e) => {
+          const value = e.target.value;
+          handleFieldChange(row._id, "poGenerationStatus", value);
+
+          // If Done → set today's date
+          if (value === "Done") {
+            const today = new Date();
+            const formattedDate = `${String(today.getDate()).padStart(2, "0")}-${String(
+              today.getMonth() + 1
+            ).padStart(2, "0")}-${today.getFullYear()}`;
+
+            handleFieldChange(row._id, "poDate", formattedDate);
+          } 
+          // If Hold / Cancelled / empty → clear PO Date
+          else {
+            handleFieldChange(row._id, "poDate", "");
+          }
+        }}
+      >
+        <option value="">--Select--</option>
+        <option value="Hold">Hold</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="Done">Done</option>
+      </select>
+    </td>
+
+    {/* PO Date (Always Read Only) */}
+    <td className="px-4 py-2 border-b">
+      <input
+        type="text"
+        className="border p-1 rounded bg-gray-100 cursor-not-allowed"
+        value={row.poDate ?? ""}
+        readOnly={true}  // Always read-only
+      />
+    </td>
+
+    {/* PO Number */}
+    <td className="px-4 py-2 border-b">
+      <input
+        type="text"
+        className="border p-1 rounded"
+        value={row.poNumber ?? ""}
+        onChange={(e) => handleFieldChange(row._id, "poNumber", e.target.value)}
+      />
+    </td>
+
+    {/* Vendor Name */}
+    <td className="px-4 py-2 border-b">
+      <input
+        type="text"
+        className="border p-1 rounded"
+        value={row.vendorName ?? ""}
+        onChange={(e) => handleFieldChange(row._id, "vendorName", e.target.value)}
+      />
+    </td>
+
+    {/* Lead Days */}
+    <td className="px-4 py-2 border-b">
+      <input
+        type="number"
+        className="border p-1 rounded"
+        value={row.leadDays ?? ""}
+        onChange={(e) => handleFieldChange(row._id, "leadDays", e.target.value)}
+      />
+    </td>
+
+    {/* Payment Condition */}
+    <td className="px-4 py-2 border-b">
+      <select
+        className="border p-1 rounded"
+        value={row.paymentCondition ?? ""}
+        onChange={(e) => handleFieldChange(row._id, "paymentCondition", e.target.value)}
+      >
+        <option value="">--Select--</option>
+        <option value="After Received">After Received</option>
+        <option value="Before Dispatch">Before Dispatch</option>
+        <option value="PWP BBD">PWP BBD</option>
+        <option value="PWP BBD FAR">PWP BBD FAR</option>
+        <option value="PWP BBD PAPW">PWP BBD PAPW</option>
+      </select>
+    </td>
+  </>
+)}
+
+          {/* MATERIAL RECEIVED */}
+          {selectedOption === "Material Received" && (
+            <td className="px-4 py-2 border-b">
+              <select
+                className="border p-1 rounded"
+                value={row.grnToStore ?? ""}
+                onChange={(e) => handleFieldChange(row._id, "grnToStore", e.target.value)}
+              >
+                <option value="">--Select--</option>
+                <option value="Pending">Pending</option>
+                <option value="Received">Received</option>
+              </select>
+            </td>
+          )}
+        </tr>
+      )}
+    </>
+  ))}
+</tbody>
+
+            </table>
+          </div>
+        </motion.div>
+
+        {/* ------- RIGHT ALIGNED SUBMIT BUTTON ------- */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleSubmitUpdates}
+            disabled={saving}
+            className={`mt-6 px-6 py-3 text-lg rounded-xl shadow-md transition ${
+              saving ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"
+            }`}
+          >
+            {saving ? "SAVING..." : "SUBMIT UPDATES"}
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}

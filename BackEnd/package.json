@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "cross-env": "^10.1.0",
     "dotenv-flow": "^4.1.0",
