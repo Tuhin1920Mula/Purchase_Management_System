@@ -362,6 +362,7 @@ export default function IndentCreationForm() {
                 <option value="RICE FIELD">RICE FIELD</option>
               </select>
             </div>
+            
             {/* Section */}
             <div>
               <label className="block font-medium mb-1 text-gray-700">
@@ -425,13 +426,58 @@ export default function IndentCreationForm() {
                 onChange={handleChange}
                 className="w-full p-3 bg-[#DFDDDD] rounded-xl"
               >
-                <option value="">Select UOM</option>
+<option value="">Select UOM</option>
                 <option value="DRUM">DRUM</option>
                 <option value="NOS">NOS</option>
                 <option value="KG">KG</option>
                 <option value="PCS">PCS</option>
+                <option value="JAR">JAR</option>
+                <option value="MTR">MTR</option>
+                <option value="BAGS">BAGS</option>
                 <option value="LTR">LTR</option>
                 <option value="SET">SET</option>
+                <option value="BARREL">BARREL</option>
+                <option value="BELT">BELT</option>
+                <option value="RING">RING</option>
+                <option value="GM">GM</option>
+                <option value="BOX">BOX</option>
+                <option value="FT">FT</option>
+                <option value="ROLL">ROLL</option>
+                <option value="ML">ML</option>
+                <option value="SQ">SQ</option>
+                <option value="CASE">CASE</option>
+                <option value="TON">TON</option>
+                <option value="PKT">PKT</option>
+                <option value="BOTTLE">BOTTLE</option>
+                <option value="PAIR">PAIR</option>
+                <option value="COIL">COIL</option>
+                <option value="CARTON">CARTON</option>
+                <option value="STRIPS">STRIPS</option>
+                <option value="CAN">CAN</option>
+                <option value="PATI">PATI</option>
+                <option value="BUNDLE">BUNDLE</option>
+                <option value="BORA">BORA</option>
+                <option value="FILE">FILE</option>
+                <option value="AMPULES">AMPULES</option>
+                <option value="BLOCK">BLOCK</option>
+                <option value="CAPSULE">CAPSULE</option>
+                <option value="REAM">REAM</option>
+                <option value="CHAIN">CHAIN</option>
+                <option value="PACK">PACK</option>
+                <option value="SQM">SQM</option>
+                <option value="M2">M2</option>
+                <option value="CFT">CFT</option>
+                <option value="SQ FT">SQ FT</option>
+                <option value="EACH">EACH</option>
+                <option value="CAR">CAR</option>
+                <option value="LENGTH">LENGTH</option>
+                <option value="DISTA">DISTA</option>
+                <option value="PVC">PVC</option>
+                <option value="DUMPER">DUMPER</option>
+                <option value="UNIT">UNIT</option>
+                <option value="SET EACH">SET EACH</option>
+                <option value="ROLL/KG">ROLL/KG</option>
+                <option value="MT">MT</option>
               </select>
             </div>
           </div>
