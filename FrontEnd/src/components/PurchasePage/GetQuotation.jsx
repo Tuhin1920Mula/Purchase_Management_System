@@ -11,39 +11,88 @@ import {
   FaShoppingCart,
   FaShip,
   FaFileUpload,
+  FaClipboardCheck,
+  FaSearch,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 //import { getAllIndentForms, updatePurchaseRow, setChangedRowsForLogging } from "../../api/IndentForm.api";
 import { getAllIndentForms, updatePurchaseRow } from "../../api/IndentForm.api";
 
-const navLinks = {
-  "Executive FMS Section": [
-    { name: "Get Quotation", icon: <FaFileAlt /> },
-    { name: "Comparison Statement", icon: <FaBalanceScale /> },
-    { name: "Technical Approval", icon: <FaCheckCircle /> },
-    { name: "Commercial Negotiation", icon: <FaHandshake /> },
-    { name: "PO Generation", icon: <FaFileSignature /> },
-    { name: "PC and Payment", icon: <FaMoneyCheckAlt /> },
-    { name: "Transport", icon: <FaShip /> },
-    { name: "Material Received", icon: <FaTruck /> },
-  ],
-  //"PC Follow UP Section": [],
+// ---------------------- ROLE FIRST ----------------------
+const getNavLinksByRole = (role) => {
+  // Default full menu
+  const fullMenu = {
+    "Executive FMS Section": [
+      { name: "Indent Verification", icon: <FaClipboardCheck /> },
+      { name: "Get Quotation", icon: <FaFileAlt /> },
+      { name: "Comparison Statement", icon: <FaBalanceScale /> },
+      { name: "Technical Approval", icon: <FaCheckCircle /> },
+      { name: "Commercial Negotiation", icon: <FaHandshake /> },
+      { name: "PO Generation", icon: <FaFileSignature /> },
+      { name: "PC and Payment", icon: <FaMoneyCheckAlt /> },
+      { name: "Transport", icon: <FaShip /> },
+      { name: "Material Received", icon: <FaTruck /> },
+    ],
+  };
+
+  // If PA → restricted menu
+  if (role === "PSE") {
+    return {
+      "Executive FMS Section": [
+        { name: "Indent Verification", icon: <FaClipboardCheck /> },
+        { name: "Comparison Statement", icon: <FaBalanceScale /> },
+        { name: "Technical Approval", icon: <FaCheckCircle /> },
+        { name: "Commercial Negotiation", icon: <FaHandshake /> },
+      ],
+    };
+  } else if (role === "PA") {
+    return {
+      "Executive FMS Section": [
+        { name: "Get Quotation", icon: <FaFileAlt /> },
+        { name: "Comparison Statement", icon: <FaBalanceScale /> },
+        { name: "PO Generation", icon: <FaFileSignature /> },
+      ],
+    };
+  }
+
+  return fullMenu;
 };
 
 export default function PurchasePage() {
   const navigate = useNavigate();
-  const [selectedOption, setSelectedOption] = useState("Get Quotation");
+  // --- Load role FIRST ---
+  const [role, setRole] = useState(localStorage.getItem("role") || "");
+  // --- Generate navLinks AFTER role is known ---
+  const navLinks = getNavLinksByRole(role);
+  const getDefaultOption = (role) => {
+    if (role === "PA") return "Get Quotation";
+    if (role === "PSE") return "Indent Verification";
+    return "";
+  };
+
+  const [selectedOption, setSelectedOption] = useState(getDefaultOption(role));
   const [tableData, setTableData] = useState([]);
   const [changedRows, setChangedRows] = useState({});
   const latestDataRef = useRef([]); // <- always keep freshest data here
   const [saving, setSaving] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [pdfPreview, setPdfPreview] = useState({});
+  const [findBy, setFindBy] = useState("");
+  const [selectedSite, setSelectedSite] = useState("");
+  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
 
   // keep ref in-sync whenever state changes
   useEffect(() => {
     latestDataRef.current = tableData;
   }, [tableData]);
+
+  useEffect(() => {
+    fetchIndentForms();
+  }, [findBy, selectedSite, date, startDate, endDate]);
+
 
   useEffect(() => {
     fetchIndentForms();
@@ -56,6 +105,7 @@ export default function PurchasePage() {
 
   const handleLogout = () => {
     localStorage.removeItem("role");
+    localStorage.removeItem("username");
     navigate("/", { replace: true });
     window.location.reload();
   };
@@ -78,22 +128,80 @@ export default function PurchasePage() {
     console.log("Updated Field:", { id, field, value });
   };
 
+  // const fetchIndentForms = async () => {
+  //   try {
+  //     const role = localStorage.getItem("role");
+  //     const username = localStorage.getItem("username");
 
-  // Fetch data and initialize both state and the ref
+  //     const response = await getAllIndentForms({ role, username });
+
+  //     if (response && response.success && response.data) {
+  //       console.log("📥 Filtered Data fetched:", response.data);
+  //       setTableData(response.data);
+  //       latestDataRef.current = response.data;
+  //     } else {
+  //       console.warn("⚠️ Unexpected response:", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Error fetching Purchase data:", error);
+  //   }
+  // };
+
+  const toInputDateFormat = (dateStr) => {
+  if (!dateStr) return "";
+  const [dd, mm, yyyy] = dateStr.split("-");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
   const fetchIndentForms = async () => {
-    try {
-      const response = await getAllIndentForms("");
-      if (response && response.success && response.data) {
-        console.log("📥 Data fetched from backend:", response.data);
-        setTableData(response.data);
-        latestDataRef.current = response.data;
-      } else {
-        console.warn("⚠️ getAllIndentForms returned unexpected shape:", response);
+  try {
+    const role = localStorage.getItem("role");
+    const username = localStorage.getItem("username");
+
+    const response = await getAllIndentForms({ role, username });
+
+    if (response && response.success && response.data) {
+      let filteredData = response.data;
+
+      // -------- FILTER BY SITE --------
+      if (findBy === "Site" && selectedSite) {
+        filteredData = filteredData.filter(item =>
+          item.site?.toLowerCase() === selectedSite.toLowerCase()
+        );
       }
-    } catch (error) {
-      console.error("❌ Error fetching Purchase data:", error);
+
+      // -------- FILTER BY DATE --------
+      if (findBy === "Date" && date) {
+        filteredData = filteredData.filter(item => {
+          return item.date === date;
+        });
+      }
+
+      // -------- FILTER BY DATE RANGE --------
+      if (findBy === "DateRange" && startDate && endDate) {
+        filteredData = filteredData.filter(item => {
+          console.log(
+            "🔍 Range Check → Start:", startDate,
+            "| End:", endDate,
+            "| Item:", item.date
+          );
+
+          return item.date >= startDate && item.date <= endDate;
+        });
+      }
+
+      console.log("📥 Filtered Data fetched:", filteredData);
+
+      setTableData(filteredData);
+      latestDataRef.current = filteredData;
+    } else {
+      console.warn("⚠️ Unexpected response:", response);
     }
-  };
+  } catch (error) {
+    console.error("❌ Error fetching Purchase data:", error);
+  }
+};
+
 
   // Submit uses latestDataRef.current (always freshest snapshot) to build payloads
   const handleSubmitUpdates = async () => {
@@ -231,75 +339,109 @@ export default function PurchasePage() {
           transition={{ duration: 0.5 }}
           className="bg-white rounded-3xl shadow-md p-8"
         >
+          
+          {/* ---------- FILTER BAR (TOP RIGHT) ---------- */}
+          <div className="flex justify-end mb-3">
+            <div className="flex items-center gap-3">
+
+              {/* Icon + Label with background */}
+              <div className="flex items-center gap-2 bg-red-100 px-3 py-2 rounded-lg shadow-sm">
+                <FaSearch className="text-red-700 text-xl font-bold" />
+
+                <label className="text-lg font-bold text-red-800">
+                  Find By :
+                </label>
+              </div>
+
+              {/* Main Dropdown */}
+              <select
+                className="border p-1 rounded-lg text-xs"
+                value={findBy}
+                onChange={(e) => setFindBy(e.target.value)}
+              >
+                <option value="">Select</option>
+                <option value="Site">Site</option>
+                <option value="Date">Date</option>
+                <option value="DateRange">Date Range</option>
+              </select>
+
+              {/* If Site selected */}
+              {findBy === "Site" && (
+                <select
+                  className="border p-1 rounded-lg text-xs"
+                  value={selectedSite}
+                  onChange={(e) => setSelectedSite(e.target.value)}
+                >
+                  <option value="">Select Site</option>
+                  <option value="HIPL">HIPL</option>
+                  <option value="RSIPL">RSIPL</option>
+                  <option value="HRM">HRM</option>
+                  <option value="SUNAGROW">SUNAGROW</option>
+                  <option value="RICE FIELD">RICE FIELD</option>
+                </select>
+              )}
+
+              {/* If Date selected */}
+              {findBy === "Date" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    className="border p-1 rounded-lg text-xs"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* If Date Range selected */}
+              {findBy === "DateRange" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    className="border p-1 rounded-lg text-xs"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                  <span className="font-medium text-xs">to</span>
+                  <input
+                    type="date"
+                    className="border p-1 rounded-lg text-xs"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              )}
+
+            </div>
+          </div>
+          
           <div className="mb-8 p-4 bg-red-600 rounded-xl shadow-md text-center">
             <h1 className="text-3xl font-bold text-white">Purchase</h1>
           </div>
 
           <div className="w-full overflow-x-auto">
-            <table className="min-w-max border border-gray-200 rounded-xl whitespace-nowrap">
-              {/* <thead className="bg-gray-200 text-left rounded-t-xl">
-                <tr>
-                  <th className="px-4 py-3 border-b">Date</th>
-                  <th className="px-4 py-3 border-b">Site</th>
-                  <th className="px-4 py-3 border-b">Unique ID</th>
-                  <th className="px-4 py-3 border-b">Indent Number</th>
-                  <th className="px-4 py-3 border-b">Item Number</th>
-                  <th className="px-4 py-3 border-b">Item Description</th>
-                  <th className="px-4 py-3 border-b">UOM</th>
-                  <th className="px-4 py-3 border-b">Total Quantity</th>
-                  <th className="px-4 py-3 border-b">Submitted By</th>
-                  <th className="px-4 py-3 border-b">Section</th>
-
-                  {selectedOption === "Get Quotation" && (
-                    <>
-                      <th className="px-4 py-3 border-b text-red-700">Get Quotation Status</th>
-                      <th className="px-4 py-3 border-b text-red-700">Doer Status</th>
-                    </>
-                  )}
-
-                  {selectedOption === "Technical Approval" && (
-                    <>
-                      <th className="px-4 py-3 border-b text-red-700">Technical Approval Status</th>
-                      <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
-                    </>
-                  )}
-
-                  {selectedOption === "Commercial Negotiation" && (
-                    <>
-                      <th className="px-4 py-3 border-b text-red-700">Finalize Terms Status</th>
-                      <th className="px-4 py-3 border-b text-red-700">Get Approval</th>
-                      <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
-                    </>
-                  )}
-
-                  {selectedOption === "PO Generation" && (
-                    <>
-                      <th className="px-4 py-3 border-b text-red-700">PO Generation Status</th>
-                      <th className="px-4 py-3 border-b text-red-700">PO Number</th>
-                      <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
-                      <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
-                    </>
-                  )}
-
-                  {selectedOption === "Material Received" && (
-                    <>
-                      <th className="px-4 py-3 border-b text-red-700">GRN to Store</th>
-                    </>
-                  )}
-                </tr>
-              </thead> */}
+            <table className="min-w-max border border-gray-200 rounded-xl whitespace-nowrap text-xs">
 
               <thead className="bg-gray-200 text-left rounded-t-xl">
                 <tr>
 
                   {/* ------------------------- COMPARISON STATEMENT ------------------------- */}
                   {selectedOption === "Comparison Statement" ? (
-                    <>
-                      <th className="px-4 py-3 border-b">Date</th>
-                      <th className="px-4 py-3 border-b">Unique ID</th>
-                      <th className="px-4 py-3 border-b text-red-700">Upload PDF</th>
-                    </>
-                  ) : (
+                      <>
+                        <th className="px-4 py-3 border-b">Date</th>
+                        <th className="px-4 py-3 border-b">Unique ID</th>
+                        <th className="px-4 py-3 border-b text-red-700">Upload PDF</th>
+
+                        {/* Add conditional header based on role */}
+                        {role === "PA" && (
+                          <th className="px-4 py-3 border-b text-red-700">Upload Status</th>
+                        )}
+
+                        {role === "PSE" && (
+                          <th className="px-4 py-3 border-b text-red-700">Review Status</th>
+                        )}
+                      </>
+                    ) : (
                     <>
                       {/* ------------------------- DEFAULT COLUMNS ------------------------- */}
                       <th className="px-4 py-3 border-b">Date</th>
@@ -312,38 +454,62 @@ export default function PurchasePage() {
                       <th className="px-4 py-3 border-b">Total Quantity</th>
                       <th className="px-4 py-3 border-b">Submitted By</th>
                       <th className="px-4 py-3 border-b">Section</th>
+                      <th className="px-4 py-3 border-b text-red-700">Doer Name</th>
 
                       {/* ------------------------- CONDITIONAL HEADERS ------------------------- */}
+                      {selectedOption === "Indent Verification" && (
+                        <>
+                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                        </>
+                      )}
+                      
                       {selectedOption === "Get Quotation" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Get Quotation Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
+                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
+                          <th className="px-4 py-3 border-b text-red-700">Send for Get Quotation</th>
                           <th className="px-4 py-3 border-b text-red-700">Doer Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
+                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
                         </>
                       )}
 
                       {selectedOption === "Technical Approval" && (
                         <>
+                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
+                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
                           <th className="px-4 py-3 border-b text-red-700">Technical Approval Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
                           <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
+                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
                         </>
                       )}
 
                       {selectedOption === "Commercial Negotiation" && (
                         <>
+                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
+                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
                           <th className="px-4 py-3 border-b text-red-700">Finalize Terms Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
                           <th className="px-4 py-3 border-b text-red-700">Get Approval</th>
                           <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
+                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
                         </>
                       )}
 
                       {selectedOption === "PO Generation" && (
                         <>
+                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
+                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
                           <th className="px-4 py-3 border-b text-red-700">PO Generation Status</th>
+                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
                           <th className="px-4 py-3 border-b text-red-700">PO Date</th>
                           <th className="px-4 py-3 border-b text-red-700">PO Number</th>
                           <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
                           <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
+                          <th className="px-4 py-3 border-b text-red-700">Amount</th>
                           <th className="px-4 py-3 border-b text-red-700">Payment Condition</th>
+                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
                         </>
                       )}
 
@@ -359,328 +525,629 @@ export default function PurchasePage() {
               </thead>
 
               <tbody>
-  {tableData.map((row, index) => (
-    <>
-      {selectedOption === "Comparison Statement" ? (
-        /* ------------- ONLY FOR COMPARISON STATEMENT ------------- */
-        <tr
-          key={row._id || index}
-          className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-red-50 transition`}
-        >
-          {/* Date */}
-          <td className="px-4 py-2 border-b">{row.date}</td>
+                {tableData.map((row, index) => (
+                  <>
+                    {selectedOption === "Comparison Statement" ? (
+                      /* ------------- ONLY FOR COMPARISON STATEMENT ------------- */
+                      <tr
+                        key={row._id || index}
+                        className={`${index % 2 === 0 ? "bg-gray-50 h-4" : "bg-white h-4"} hover:bg-red-50 transition`}
+                      >
+                        {/* Date */}
+                        <td className="px-4 py-0 border-b">{row.date}</td>
 
-          {/* Unique ID */}
-          <td className="px-4 py-2 border-b">{row.uniqueId}</td>
+                        {/* Unique ID */}
+                        <td className="px-4 py-0 border-b">{row.uniqueId}</td>
 
-          {/* PDF Upload Button */}
-          <td className="px-4 py-2 border-b flex items-center gap-3">
+                        {/* PDF Upload Button */}
+                        <td className="px-4 py-1 border-b flex items-center gap-3">
 
-  {/* Hidden File Input */}
-  <input
-    id={`pdfInput_${row._id}`}
-    type="file"
-    accept="application/pdf"
-    className="hidden"
-    onChange={(e) => {
-      const file = e.target.files[0];
+                          {/* Hidden File Input */}
+                          <input
+                            id={`pdfInput_${row._id}`}
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
 
-      if (file) {
-        const previewUrl = URL.createObjectURL(file);
+                              if (file) {
+                                const previewUrl = URL.createObjectURL(file);
 
-        setPdfPreview(prev => ({
-          ...prev,
-          [row._id]: previewUrl
-        }));
+                                setPdfPreview(prev => ({
+                                  ...prev,
+                                  [row._id]: previewUrl
+                                }));
 
-        setUploadedFiles(prev => ({
-          ...prev,
-          [row._id]: file.name
-        }));
+                                setUploadedFiles(prev => ({
+                                  ...prev,
+                                  [row._id]: file.name
+                                }));
 
-        handlePdfUpload(row._id, file);
-      }
-    }}
-  />
+                                handlePdfUpload(row._id, file);
+                              }
+                            }}
+                          />
 
-  {/* Upload Button */}
-  <button
-    onClick={() =>
-      document.getElementById(`pdfInput_${row._id}`).click()
-    }
-    className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-  >
-    <FaFileUpload /> Upload
-  </button>
+                          {/* Upload Button */}
+                          <button
+                            onClick={() =>
+                              document.getElementById(`pdfInput_${row._id}`).click()
+                            }
+                            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-0.5 rounded hover:bg-blue-700 transition"
+                          >
+                            <FaFileUpload /> Upload
+                          </button>
 
-  {/* Filename Button (Yellow #F5D038) */}
-  {uploadedFiles[row._id] && (
-    <button
-      onClick={() => window.open(pdfPreview[row._id], "_blank")}
-      className="px-3 py-1 rounded font-medium transition"
-      style={{
-        backgroundColor: "#F5D038",
-        color: "#000",
-      }}
-    >
-      {uploadedFiles[row._id]}
-    </button>
-  )}
+                          {/* Filename Button */}
+                          {uploadedFiles[row._id] && (
+                            <button
+                              onClick={() => window.open(pdfPreview[row._id], "_blank")}
+                              className="px-3 py-0 rounded font-medium transition"
+                              style={{
+                                backgroundColor: "#F5D038",
+                                color: "#000",
+                              }}
+                            >
+                              {uploadedFiles[row._id]}
+                            </button>
+                          )}
 
-  {/* Google Drive Uploaded File Button */}
-  {row.comparisonPdf && (
-    <button
-      onClick={() => window.open(row.comparisonPdf, "_blank")}
-      className="px-3 py-1 rounded font-medium transition"
-      style={{
-        backgroundColor: "#F5D038",
-        color: "#000",
-      }}
-    >
-      View Uploaded PDF
-    </button>
-  )}
-</td>
+                          {/* Google Drive Uploaded File Button */}
+                          {row.comparisonPdf && (
+                            <button
+                              onClick={() => window.open(row.comparisonPdf, "_blank")}
+                              className="px-3 py-1 rounded font-medium transition"
+                              style={{
+                                backgroundColor: "#F5D038",
+                                color: "#000",
+                              }}
+                            >
+                              View Uploaded PDF
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ) : (
+                      /* ------------- ALL OTHER SECTIONS (DEFAULT TABLE) ------------- */
+                      <tr
+                        key={row._id || index}
+                        className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-red-50 transition`}
+                      >
 
+                        {/* DATE */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <input
+                              type="date"
+                              className="border p-1 rounded w-full"
+                              value={row.date ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "date", e.target.value)}
+                            />
+                          ) : (
+                            row.date ? new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-") : ""
+                          )}
+                        </td>
 
-        </tr>
-      ) : (
-        /* ------------- ALL OTHER SECTIONS (DEFAULT TABLE) ------------- */
-        <tr
-          key={row._id || index}
-          className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-red-50 transition`}
-        >
-          <td className="px-4 py-2 border-b">{row.date}</td>
-          <td className="px-4 py-2 border-b">{row.site}</td>
-          <td className="px-4 py-2 border-b">{row.uniqueId}</td>
-          <td className="px-4 py-2 border-b">{row.indentNumber}</td>
-          <td className="px-4 py-2 border-b">{row.itemNumber}</td>
-          <td className="px-4 py-2 border-b">{row.itemDescription}</td>
-          <td className="px-4 py-2 border-b">{row.uom}</td>
-          <td className="px-4 py-2 border-b">{row.totalQuantity}</td>
-          <td className="px-4 py-2 border-b">{row.submittedBy}</td>
-          <td className="px-4 py-2 border-b">{row.section}</td>
+                        {/* SITE */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <select
+                              className="border p-1 rounded w-full"
+                              value={row.site ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "site", e.target.value)}
+                            >
+                              <option value="">Select Site</option>
+                              <option value="HIPL">HIPL</option>
+                              <option value="RSIPL">RSIPL</option>
+                              <option value="HRM">HRM</option>
+                              <option value="SUNAGROW">SUNAGROW</option>
+                              <option value="RICE FIELD">RICE FIELD</option>
+                            </select>
+                          ) : (
+                            row.site
+                          )}
+                        </td>
 
-          {/* GET QUOTATION */}
-          {selectedOption === "Get Quotation" && (
-            <>
-              <td className="px-4 py-2 border-b">
-                <select
-                  className="border p-1 rounded"
-                  value={row.quotationStatus ?? ""}
-                  onChange={(e) =>
-                    handleFieldChange(row._id, "quotationStatus", e.target.value)
-                  }
-                >
-                  <option value="">--Select--</option>
-                  <option value="Hold">Hold</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Done">Done</option>
-                </select>
-              </td>
+                        {/* UNIQUE ID (ALWAYS READ ONLY) */}
+                        <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                          {row.uniqueId}
+                        </td>
 
-              <td className="px-4 py-2 border-b">
-                <select
-                  className="border p-1 rounded"
-                  value={row.doerStatus ?? ""}
-                  onChange={(e) => handleFieldChange(row._id, "doerStatus", e.target.value)}
-                >
-                  <option value="">--Select--</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Working">Working</option>
-                  <option value="Done">Done</option>
-                </select>
-              </td>
-            </>
-          )}
+                        {/* INDENT NUMBER */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded w-full"
+                              value={row.indentNumber ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "indentNumber", e.target.value)}
+                            />
+                          ) : (
+                            row.indentNumber
+                          )}
+                        </td>
 
-          {/* TECHNICAL APPROVAL */}
-          {selectedOption === "Technical Approval" && (
-            <>
-              <td className="px-4 py-2 border-b">
-                <select
-                  className="border p-1 rounded"
-                  value={row.technicalApprovalStatus ?? ""}
-                  onChange={(e) =>
-                    handleFieldChange(row._id, "technicalApprovalStatus", e.target.value)
-                  }
-                >
-                  <option value="">--Select--</option>
-                  <option value="Hold">Hold</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Done">Done</option>
-                  <option value="Reopen">Reopen</option>
-                </select>
-              </td>
+                        {/* ITEM NUMBER */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded w-full"
+                              value={row.itemNumber ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "itemNumber", e.target.value)}
+                            />
+                          ) : (
+                            row.itemNumber
+                          )}
+                        </td>
 
-              <td className="px-4 py-2 border-b">
-                <input
-                  type="text"
-                  className="border p-1 rounded"
-                  value={row.approverName ?? ""}
-                  onChange={(e) => handleFieldChange(row._id, "approverName", e.target.value)}
-                />
-              </td>
-            </>
-          )}
+                        {/* ITEM DESCRIPTION */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded w-full"
+                              value={row.itemDescription ?? ""}
+                              onChange={(e) =>
+                                handleFieldChange(row._id, "itemDescription", e.target.value)
+                              }
+                            />
+                          ) : (
+                            row.itemDescription
+                          )}
+                        </td>
 
-          {/* COMMERCIAL NEGOTIATION */}
-          {selectedOption === "Commercial Negotiation" && (
-            <>
-              <td className="px-4 py-2 border-b">
-                <select
-                  className="border p-1 rounded"
-                  value={row.finalizeTermsStatus ?? ""}
-                  onChange={(e) =>
-                    handleFieldChange(row._id, "finalizeTermsStatus", e.target.value)
-                  }
-                >
-                  <option value="">--Select--</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Finalized">Finalized</option>
-                </select>
-              </td>
+                        {/* UOM */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <input
+                              type="text"
+                              className="border p-1 rounded w-full"
+                              value={row.uom ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "uom", e.target.value)}
+                            />
+                          ) : (
+                            row.uom
+                          )}
+                        </td>
 
-              <td className="px-4 py-2 border-b">
-                <select
-                  className="border p-1 rounded"
-                  value={row.getApproval ?? ""}
-                  onChange={(e) => handleFieldChange(row._id, "getApproval", e.target.value)}
-                >
-                  <option value="">--Select--</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </td>
+                        {/* TOTAL QUANTITY */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <input
+                              type="number"
+                              className="border p-1 rounded w-full"
+                              value={row.totalQuantity ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "totalQuantity", e.target.value)}
+                            />
+                          ) : (
+                            row.totalQuantity
+                          )}
+                        </td>
 
-              <td className="px-4 py-2 border-b">
-                <select
-                  className="border p-1 rounded"
-                  value={row.approverName2 ?? ""}
-                  onChange={(e) => handleFieldChange(row._id, "approverName2", e.target.value)}
-                >
-                  <option value="">--Select--</option>
-                  <option value="Tapan Agarwala">Tapan Agarwal</option>
-                  <option value="Rohit Agarwala">Rohit Agarwala</option>
-                  <option value="Hiru Ghosh">Hiru Ghosh</option>
-                  <option value="GM Sir">GM Sir</option>
-                </select>
-              </td>
-            </>
-          )}
+                        {/* SUBMITTED BY (ALWAYS READ ONLY) */}
+                        <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                          {row.submittedBy}
+                        </td>
 
-          {/* PO GENERATION */}
-          {selectedOption === "PO Generation" && (
-  <>
-    {/* PO Generation Status */}
-    <td className="px-4 py-2 border-b">
-      <select
-        className="border p-1 rounded"
-        value={row.poGenerationStatus ?? ""}
-        onChange={(e) => {
-          const value = e.target.value;
-          handleFieldChange(row._id, "poGenerationStatus", value);
+                        {/* SECTION */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <select
+                              className="border p-1 rounded w-full"
+                              value={row.section ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "section", e.target.value)}
+                            >
+                              <option value="">Select Section</option>
+                              <option value="REFINERY">REFINERY</option>
+                              <option value="CENTRAL STORE">CENTRAL STORE</option>
+                              <option value="MEGA STORE">MEGA STORE</option>
+                              <option value="OILS STORE">OILS STORE</option>
+                              <option value="PP STORE">PP STORE</option>
+                              <option value="RSIPL">RSIPL</option>
+                              <option value="HRM">HRM</option>
+                              <option value="OILS LAB">OILS LAB</option>
+                              <option value="RSIPL-PROJECT-R">RSIPL-PROJECT-R</option>
+                              <option value="RSIPL-PROJECT-S">RSIPL-PROJECT-S</option>
+                            </select>
+                          ) : (
+                            row.section
+                          )}
+                        </td>
 
-          // If Done → set today's date
-          if (value === "Done") {
-            const today = new Date();
-            const formattedDate = `${String(today.getDate()).padStart(2, "0")}-${String(
-              today.getMonth() + 1
-            ).padStart(2, "0")}-${today.getFullYear()}`;
+                        {/* DOER NAME */}
+                        <td className="px-4 py-2 border-b">
+                          {selectedOption === "Indent Verification" ? (
+                            <select
+                              className="border p-1 rounded w-full"
+                              value={row.doerName ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "doerName", e.target.value)}
+                            >
+                              <option value="">Select Doer Name</option>
+                              <option value="Executive 1">Executive 1</option>
+                              <option value="Executive 2">Executive 2</option>
+                              <option value="Executive 3">Executive 3</option>
+                              <option value="Executive 4">Executive 4</option>
+                            </select>
+                          ) : (
+                            row.doerName
+                          )}
+                        </td>
 
-            handleFieldChange(row._id, "poDate", formattedDate);
-          } 
-          // If Hold / Cancelled / empty → clear PO Date
-          else {
-            handleFieldChange(row._id, "poDate", "");
-          }
-        }}
-      >
-        <option value="">--Select--</option>
-        <option value="Hold">Hold</option>
-        <option value="Cancelled">Cancelled</option>
-        <option value="Done">Done</option>
-      </select>
-    </td>
+                        {/* ------------ OTHER CONDITION BLOCKS REMAIN SAME ------------ */}
+                        
+                        {/* Indent Verification */}
+                        {selectedOption === "Indent Verification" && (
+                          <>
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.remarksIndentVerification ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "remarksIndentVerification", e.target.value)
+                                }
+                              />
+                            </td>
+                          </>
+                        )}
+                        
+                        {/* GET QUOTATION */}
+                        {selectedOption === "Get Quotation" && (
+                          <>
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.plannedGetQuotation
+                                ? new Date(row.plannedGetQuotation)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="date"
+                                className="border p-1 rounded"
+                                value={row.actualGetQuotation ?? ""}
+                                onChange={(e) => handleFieldChange(row._id, "actualGetQuotation", e.target.value)}
+                              />
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.quotationStatus ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "quotationStatus", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Inquiry Send">Inquiry Send</option>
+                                <option value="Hold">Hold</option>
+                              </select>
+                            </td>
 
-    {/* PO Date (Always Read Only) */}
-    <td className="px-4 py-2 border-b">
-      <input
-        type="text"
-        className="border p-1 rounded bg-gray-100 cursor-not-allowed"
-        value={row.poDate ?? ""}
-        readOnly={true}  // Always read-only
-      />
-    </td>
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.doerStatus ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "doerStatus", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Done">Done</option>
+                              </select>
+                            </td>
 
-    {/* PO Number */}
-    <td className="px-4 py-2 border-b">
-      <input
-        type="text"
-        className="border p-1 rounded"
-        value={row.poNumber ?? ""}
-        onChange={(e) => handleFieldChange(row._id, "poNumber", e.target.value)}
-      />
-    </td>
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.timeDelayGetQuotation}
+                            </td>
 
-    {/* Vendor Name */}
-    <td className="px-4 py-2 border-b">
-      <input
-        type="text"
-        className="border p-1 rounded"
-        value={row.vendorName ?? ""}
-        onChange={(e) => handleFieldChange(row._id, "vendorName", e.target.value)}
-      />
-    </td>
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.remarksGetQuotation ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "remarksGetQuotation", e.target.value)
+                                }
+                              />
+                            </td>
+                          </>
+                        )}
 
-    {/* Lead Days */}
-    <td className="px-4 py-2 border-b">
-      <input
-        type="number"
-        className="border p-1 rounded"
-        value={row.leadDays ?? ""}
-        onChange={(e) => handleFieldChange(row._id, "leadDays", e.target.value)}
-      />
-    </td>
+                        {/* TECHNICAL APPROVAL */}
+                        {selectedOption === "Technical Approval" && (
+                          <>
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.plannedTechApproval}
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="date"
+                                className="border p-1 rounded"
+                                value={row.actualTechApproval ?? ""}
+                                onChange={(e) => handleFieldChange(row._id, "actualTechApproval", e.target.value)}
+                              />
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.technicalApprovalStatus ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "technicalApprovalStatus", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Done">Done</option>
+                                <option value="Reopen">Reopen</option>
+                              </select>
+                            </td>
 
-    {/* Payment Condition */}
-    <td className="px-4 py-2 border-b">
-      <select
-        className="border p-1 rounded"
-        value={row.paymentCondition ?? ""}
-        onChange={(e) => handleFieldChange(row._id, "paymentCondition", e.target.value)}
-      >
-        <option value="">--Select--</option>
-        <option value="After Received">After Received</option>
-        <option value="Before Dispatch">Before Dispatch</option>
-        <option value="PWP BBD">PWP BBD</option>
-        <option value="PWP BBD FAR">PWP BBD FAR</option>
-        <option value="PWP BBD PAPW">PWP BBD PAPW</option>
-      </select>
-    </td>
-  </>
-)}
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.timeDelayTechApproval}
+                            </td>
 
-          {/* MATERIAL RECEIVED */}
-          {selectedOption === "Material Received" && (
-            <td className="px-4 py-2 border-b">
-              <select
-                className="border p-1 rounded"
-                value={row.grnToStore ?? ""}
-                onChange={(e) => handleFieldChange(row._id, "grnToStore", e.target.value)}
-              >
-                <option value="">--Select--</option>
-                <option value="Pending">Pending</option>
-                <option value="Received">Received</option>
-              </select>
-            </td>
-          )}
-        </tr>
-      )}
-    </>
-  ))}
-</tbody>
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.approverName ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "approverName", e.target.value)
+                                }
+                              />
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.remarksTechApproval ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "remarksTechApproval", e.target.value)
+                                }
+                              />
+                            </td>
+                          </>
+                        )}
+
+                        {/* COMMERCIAL NEGOTIATION */}
+                        {selectedOption === "Commercial Negotiation" && (
+                          <>
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.plannedCommercialNegotiation}
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="date"
+                                className="border p-1 rounded"
+                                value={row.actualCommercialNegotiation ?? ""}
+                                onChange={(e) => handleFieldChange(row._id, "actualCommercialNegotiation", e.target.value)}
+                              />
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.finalizeTermsStatus ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "finalizeTermsStatus", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Done">Done</option>
+                              </select>
+                            </td>
+
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.timeDelayCommercialNegotiation}
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.getApproval ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "getApproval", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Done">Done</option>
+                              </select>
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.approverName2 ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "approverName2", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Tapan Agarwala">Tapan Agarwala</option>
+                                <option value="Rohit Agarwala">Rohit Agarwala</option>
+                                <option value="Hiru Ghosh">Hiru Ghosh</option>
+                                <option value="Arindam Saha">Arindam Saha</option>
+                              </select>
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.remarksCommercialNegotiation ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "remarksCommercialNegotiation", e.target.value)
+                                }
+                              />
+                            </td>
+                          </>
+                        )}
+
+                        {/* PO GENERATION */}
+                        {selectedOption === "PO Generation" && (
+                          <>
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.plannedPoGeneration}
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="date"
+                                className="border p-1 rounded"
+                                value={row.actualPoGeneration ?? ""}
+                                onChange={(e) => handleFieldChange(row._id, "actualPoGeneration", e.target.value)}
+                              />
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.poGenerationStatus ?? ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  handleFieldChange(row._id, "poGenerationStatus", value);
+
+                                  if (value === "Done") {
+                                    const today = new Date();
+                                    const formattedDate = `${String(today.getDate()).padStart(
+                                      2,
+                                      "0"
+                                    )}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}`;
+
+                                    handleFieldChange(row._id, "poDate", formattedDate);
+                                  } else {
+                                    handleFieldChange(row._id, "poDate", "");
+                                  }
+                                }}
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Done">Done</option>
+                              </select>
+                            </td>
+
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.timeDelayPoGeneration}
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="date"
+                                className="border p-1 rounded"
+                                value={row.poDate ?? ""}
+                                onChange={(e) => handleFieldChange(row._id, "poDate", e.target.value)}
+                              />
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.poNumber ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "poNumber", e.target.value)
+                                }
+                              />
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.vendorName ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "vendorName", e.target.value)
+                                }
+                              />
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="number"
+                                className="border p-1 rounded"
+                                value={row.leadDays ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "leadDays", e.target.value)
+                                }
+                              />
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="number"
+                                className="border p-1 rounded"
+                                value={row.amount ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "amount", e.target.value)
+                                }
+                              />
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={row.paymentCondition ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "paymentCondition", e.target.value)
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="After Received">After Received</option>
+                                <option value="Before Dispatch">Before Dispatch</option>
+                                <option value="PWP BBD">PWP BBD</option>
+                                <option value="PWP BBD FAR">PWP BBD FAR</option>
+                                <option value="PWP BBD PAPW">PWP BBD PAPW</option>
+                              </select>
+                            </td>
+
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.remarksPoGeneration ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "remarksPoGeneration", e.target.value)
+                                }
+                              />
+                            </td>
+                          </>
+                        )}
+
+                        {/* MATERIAL RECEIVED */}
+                        {selectedOption === "Material Received" && (
+                          <td className="px-4 py-2 border-b">
+                            <select
+                              className="border p-1 rounded"
+                              value={row.grnToStore ?? ""}
+                              onChange={(e) =>
+                                handleFieldChange(row._id, "grnToStore", e.target.value)
+                              }
+                            >
+                              <option value="">--Select--</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Received">Received</option>
+                            </select>
+                          </td>
+                        )}
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
 
             </table>
           </div>

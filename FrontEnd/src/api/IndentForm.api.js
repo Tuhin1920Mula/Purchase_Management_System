@@ -119,9 +119,19 @@ export async function createIndentForm(data) {
   return await apiRequest("/indent", "POST", data);
 }
 
-export async function getAllIndentForms(queryParams = "") {
-  console.log("📥 Fetching All Indent Forms");
-  return await apiRequest("/indent", "GET", null, queryParams);
+// export async function getAllIndentForms(queryParams = "") {
+//   console.log("📥 Fetching All Indent Forms");
+//   return await apiRequest("/indent", "GET", null, queryParams);
+// }
+
+export async function getAllIndentForms(role, username) {
+  console.log("📥 Fetching All Indent Forms With Role & Username");
+
+  return await apiRequest(
+    "/indent/all",
+    "POST",
+    role, username
+  );
 }
 
 export async function getIndentFormById(indentId) {

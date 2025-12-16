@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import loginImg from "../assets/LoginBgImg.png";
 
 import PurchasePage from "../pages/PurchasePage";
-import ExcelPage from "../pages/ExcelPage";
+import Transport from "./Transport";
 import IndentFormPage from "../pages/IndentFormPage";
 import { loginUser } from "../api/Login.api";
 
@@ -59,6 +59,17 @@ export default function LoginForm() {
       setRole("PSE");
       setIsLoggedIn(true);
       localStorage.setItem("role", "PSE");
+      localStorage.setItem("username", username);
+    } else if (success === "PA") {
+      setRole("PA");
+      setIsLoggedIn(true);
+      localStorage.setItem("role", "PA");
+      localStorage.setItem("username", username);
+    } else if (success === "PC") {
+      setRole("PC");
+      setIsLoggedIn(true);
+      localStorage.setItem("role", "PC");
+      localStorage.setItem("username", username);
     }
   };
 
@@ -67,7 +78,10 @@ export default function LoginForm() {
     return <IndentFormPage />;
   } else if (isLoggedIn && role === "PSE") {
     return <PurchasePage />;
-    //return <ExcelPage />;
+  } else if (isLoggedIn && role === "PA") {
+    return <PurchasePage />;
+  } else if (isLoggedIn && role === "PC") {
+    return <Transport />;
   }
 
   // ================= LOGIN PAGE =================

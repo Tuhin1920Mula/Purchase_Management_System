@@ -16,7 +16,8 @@ import {
 const router = express.Router();
 
 router.post("/", createIndentForm);
-router.get("/", getAllIndentForms);
+//router.get("/", getAllIndentForms);
+router.post("/all", getAllIndentForms);
 router.get("/latest/unique-id", getLatestUniqueId);
 router.put("/purchase/update/:id", updatePurchase);
 // router.put("/purchase/update/:id", (req, res, next) => {

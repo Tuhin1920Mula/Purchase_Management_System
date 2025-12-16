@@ -1,5 +1,129 @@
 import Purchase from "../models/purchase.model.js";
 
+/* ------------------ Indian Holidays (YYYY-MM-DD) ------------------ */
+const INDIAN_HOLIDAYS = [
+  "2025-01-26",
+  "2025-08-15",
+  "2025-10-02",
+  "2025-12-25",
+];
+
+/* ------------------ Helper Functions ------------------ */
+
+// Check Sunday or holiday
+const isHoliday = (date) => {
+  const yyyyMmDd = date.toISOString().split("T")[0];
+  return date.getDay() === 0 || INDIAN_HOLIDAYS.includes(yyyyMmDd);
+};
+
+// Add working days
+const addWorkingDays = (startDate, days) => {
+  let date = new Date(startDate);
+  let count = 0;
+
+  while (count < days) {
+    date.setDate(date.getDate() + 1);
+    if (!isHoliday(date)) count++;
+  }
+  return date;
+};
+
+// Calculate delay in days only
+const calculateDelayDays = (planned, actual) => {
+  const msDiff = actual - planned;
+  if (msDiff <= 0) return "0 days";
+  const days = Math.floor(msDiff / (1000 * 60 * 60 * 24));
+  return `${days} days`;
+};
+
+/* ------------------ Controller ------------------ */
+
+export const updatePurchase = async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) {
+      return res.status(404).json({ success: false, message: "Record not found" });
+    }
+
+    /* -------- (i) Planned Get Quotation -------- */
+    if (purchase.date && !purchase.plannedGetQuotation) {
+      const baseDate = new Date(purchase.date); // YYYY-MM-DD
+      const plannedDate = addWorkingDays(baseDate, 3);
+      updateData.plannedGetQuotation = plannedDate
+        .toISOString()
+        .split("T")[0];
+    }
+
+    /* -------- (ii) Time Delay Calculation (Get Quotation) -------- */
+    if (updateData.actualGetQuotation && purchase.plannedGetQuotation) {
+      const planned = new Date(purchase.plannedGetQuotation);
+      const actual = new Date(updateData.actualGetQuotation);
+      updateData.timeDelayGetQuotation = calculateDelayDays(planned, actual);
+    }
+
+    /* -------- (iii) Planned Technical Approval -------- */
+    if (purchase.actualGetQuotation && !purchase.plannedTechApproval) {
+      const baseDate = new Date(purchase.actualGetQuotation);
+      const plannedTechDate = addWorkingDays(baseDate, 4);
+      updateData.plannedTechApproval = plannedTechDate
+        .toISOString()
+        .split("T")[0];
+    }
+
+    /* -------- (iv) Time Delay Calculation (Technical Approval) -------- */
+    if (updateData.actualTechApproval && purchase.plannedTechApproval) {
+      const planned = new Date(purchase.plannedTechApproval);
+      const actual = new Date(updateData.actualTechApproval);
+      updateData.timeDelayTechApproval = calculateDelayDays(planned, actual);
+    }
+
+    /* -------- (v) Planned Commercial Negotiation -------- */
+    if (purchase.actualTechApproval && !purchase.plannedCommercialNegotiation) {
+      const baseDate = new Date(purchase.actualTechApproval);
+      const plannedDate = addWorkingDays(baseDate, 4);
+      updateData.plannedCommercialNegotiation = plannedDate
+        .toISOString()
+        .split("T")[0];
+    }
+
+    /* -------- (vi) Time Delay Calculation (Commercial Negotiation) -------- */
+    if (updateData.actualCommercialNegotiation && purchase.plannedCommercialNegotiation) {
+      const planned = new Date(purchase.plannedCommercialNegotiation);
+      const actual = new Date(updateData.actualCommercialNegotiation);
+      updateData.timeDelayCommercialNegotiation = calculateDelayDays(planned, actual);
+    }
+
+    /* -------- (vii) Planned PO Generation -------- */
+    if (purchase.actualCommercialNegotiation && !purchase.plannedPoGeneration) {
+      const baseDate = new Date(purchase.actualCommercialNegotiation);
+      const plannedDate = addWorkingDays(baseDate, 4);
+      updateData.plannedPoGeneration = plannedDate
+        .toISOString()
+        .split("T")[0];
+    }
+
+    /* -------- (viii) Time Delay Calculation (PO Generation) -------- */
+    if (updateData.actualPoGeneration && purchase.plannedPoGeneration) {
+      const planned = new Date(purchase.plannedPoGeneration);
+      const actual = new Date(updateData.actualPoGeneration);
+      updateData.timeDelayPoGeneration = calculateDelayDays(planned, actual);
+    }
+
+    const updated = await Purchase.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    return res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("❌ Update error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Create
 export const createIndentForm = async (req, res) => {
   try {
@@ -23,10 +147,10 @@ export const getLatestUniqueId = async (req, res) => {
 
     // If no previous record found → start from "INT2_1"
     if (!lastRecord) {
-      console.log("ℹ️ No previous record found. Starting uniqueId from INT2_1.");
+      console.log("ℹ️ No previous record found. Starting uniqueId from INT2_12000.");
       return res.json({
         success: true,
-        uniqueId: "INT2_1"
+        uniqueId: "INT2_12000"
       });
     }
 
@@ -59,33 +183,105 @@ export const getLatestUniqueId = async (req, res) => {
 // ==========================
 // Update Purchase Status Fields (Custom Route)
 // ==========================
-export const updatePurchase = async (req, res) => {
-  try {
-    const updateData = req.body;
+// export const updatePurchase = async (req, res) => {
+//   try {
+//     const updateData = req.body;
 
-    const updated = await Purchase.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    );
+//     const updated = await Purchase.findByIdAndUpdate(
+//       req.params.id,
+//       updateData,
+//       { new: true }
+//     );
 
-    return res.json({ success: true, data: updated });
-  } catch (error) {
-    console.error("❌ Update error:", error);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-};
+//     return res.json({ success: true, data: updated });
+//   } catch (error) {
+//     console.error("❌ Update error:", error);
+//     return res.status(500).json({ success: false, error: error.message });
+//   }
+// };
+
+//?????????????????????????????????????????????????????????????
 
 // Get All
+// export const getAllIndentForms = async (req, res) => {
+//   try {
+//     const forms = await Purchase.find().sort({ createdAt: 1 });
+//     return res.json({ success: true, data: forms });
+//   } catch (error) {
+//     console.error("❌ Error Fetching Forms:", error);
+//     return res.status(500).json({ success: false, error: error.message });
+//   }
+// };
+
+//----------------------------------------------------
 export const getAllIndentForms = async (req, res) => {
   try {
-    const forms = await Purchase.find().sort({ createdAt: 1 });
-    return res.json({ success: true, data: forms });
+    const { role, username } = req.body;
+
+    let filter = {};
+
+    if (role === "PSE") {
+      filter = { submittedBy: username };
+    } else if (role === "PA") {
+      filter = { doerName: username };
+    }
+
+    const forms = await Purchase.find(filter).sort({ createdAt: 1 });
+
+    return res.json({
+      success: true,
+      data: forms,
+    });
+
   } catch (error) {
     console.error("❌ Error Fetching Forms:", error);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
+
+
+// export const getAllIndentForms = async (req, res) => {
+//   try {
+//     // Log what frontend sends
+//     console.log("📥 Received from Frontend:", {
+//       role: req.body.role,
+//       username: req.body.username
+//     });
+
+//     const { role, username } = req.body;
+
+//     let filter = {};
+
+//     if (role === "PSE") {
+//       filter = { submittedBy: username };
+//     } else if (role === "PA") {
+//       filter = { doerName: username };
+//     }
+
+//     // Log the filter condition created by backend
+//     console.log("🔎 Applied Filter:", filter);
+
+//     const forms = await Purchase.find(filter).sort({ createdAt: 1 });
+
+//     // Log what backend is sending back
+//     console.log("📤 Sending back records:", forms.length);
+
+//     return res.json({
+//       success: true,
+//       data: forms,
+//     });
+
+//   } catch (error) {
+//     console.error("❌ Error Fetching Forms:", error);
+//     return res.status(500).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
 
 // Get One
 export const getIndentFormById = async (req, res) => {
