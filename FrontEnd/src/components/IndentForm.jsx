@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaChevronDown, FaSignOutAlt } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx"; // Vite-friendly
@@ -158,9 +158,10 @@ submittedBy: "",
 };
 
 const handleLogout = () => {
-localStorage.removeItem("role");
-navigate("/", { replace: true });
-window.location.reload();
+  localStorage.removeItem("role");
+  localStorage.removeItem("username");
+  navigate("/", { replace: true });
+  window.location.reload();
 };
 
 // ================= Bulk Upload Handlers =================
@@ -246,22 +247,66 @@ return (
 <div className="min-h-screen bg-gray-100">
 {/* Navbar */}
 <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
-<div className="flex items-center gap-4">
-<FaShoppingCart className="text-red-600 text-5xl" />
-<h1
-className="text-4xl font-bold tracking-wide text-gray-900"
-style={{ fontFamily: "'Agu Display', sans-serif" }}
->
-PURCHASE MANAGEMENT SYSTEM
-</h1>
-</div>
-<button
-onClick={handleLogout}
-className="px-5 py-2 bg-red-600 text-white font-medium rounded-full shadow-md hover:bg-red-700 active:scale-95 transition"
->
-Logout
-</button>
-</nav>
+        {/* Left Section */}
+        <div className="flex items-center gap-4">
+          <FaShoppingCart className="text-red-600 text-5xl" />
+          <h1
+            className="text-4xl font-bold tracking-wide text-gray-900"
+            style={{ fontFamily: "'Agu Display', sans-serif" }}
+          >
+            PURCHASE MANAGEMENT SYSTEM
+          </h1>
+        </div>
+
+        {/* Right User Profile */}
+        <div className="relative group">
+          {/* Profile Button */}
+          <div className="flex items-center gap-3 cursor-pointer select-none">
+            
+            {/* Flower-style Avatar */}
+            <div className="relative w-11 h-11 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-red-500 opacity-80 blur-[1px]"></div>
+              <div className="relative w-10 h-10 rounded-full bg-red-600 flex items-center justify-center ring-2 ring-red-300 shadow-md">
+                <span className="text-white font-extrabold text-lg uppercase">
+                  {localStorage.getItem("username")?.charAt(0)}
+                </span>
+              </div>
+            </div>
+
+            {/* Username (role) */}
+            <span className="font-medium text-gray-800 whitespace-nowrap">
+              {localStorage.getItem("username")}
+              {localStorage.getItem("role") && (
+                <span className="text-sm text-gray-500 ml-1">
+                  ({localStorage.getItem("role")})
+                </span>
+              )}
+            </span>
+
+            {/* Triangle */}
+            <FaChevronDown className="text-gray-600 transition-transform group-hover:rotate-180" />
+          </div>
+
+          {/* Hover Chat Box */}
+          <div className="absolute right-0 mt-3 w-44 bg-white rounded-xl shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            
+            {/* Triangle Pointer */}
+            <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700
+                        border border-transparent rounded-xl
+                        hover:border-red-600 hover:bg-red-50 hover:text-red-600
+                        transition"
+            >
+              <FaSignOutAlt />
+              Logout
+            </button>
+          </div>
+        </div>
+      </nav>
 
 {/* Excel Template Button */}
 <div className="flex flex-row items-center justify-end p-6 mt-6 gap-6">

@@ -1,129 +1,8 @@
-// import React, { useState, useEffect, useRef } from "react";
-// import { motion } from "framer-motion";
-// import { useNavigate } from "react-router-dom";
-// import { FaShoppingCart } from "react-icons/fa";
-
-// export default function Transport() {
-//     const navigate = useNavigate();
-
-//     useEffect(() => {
-//         //fetchIndentForms();
-//         const link = document.createElement("link");
-//         link.href = "https://fonts.googleapis.com/css2?family=Agu+Display&display=swap";
-//         link.rel = "stylesheet";
-//         document.head.appendChild(link);
-//         // cleanup not required for this example
-//     }, []);
-
-//     const handleLogout = () => {
-//         localStorage.removeItem("role");
-//         localStorage.removeItem("username");
-//         navigate("/", { replace: true });
-//         window.location.reload();
-//     };
-
-//     return (
-//         <div className="min-h-screen bg-gray-100 font-poppins">
-//           {/* ------------------ TOP NAVBAR ------------------ */}
-//           <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
-//             <div className="flex items-center gap-4">
-//               <FaShoppingCart className="text-red-600 text-5xl" />
-//               <h1
-//                 className="text-4xl font-bold tracking-wide text-gray-900"
-//                 style={{ fontFamily: "'Agu Display', sans-serif" }}
-//               >
-//                 PURCHASE MANAGEMENT SYSTEM
-//               </h1>
-//             </div>
-    
-//             <button
-//               onClick={handleLogout}
-//               className="px-5 py-2 bg-red-600 text-white font-medium rounded-full shadow-md hover:bg-red-700 active:scale-95 transition"
-//             >
-//               Logout
-//             </button>
-//           </nav>
-
-//           {/* ------------------ MAIN CONTENT ------------------ */}
-//             <main className="w-full px-6 py-10">
-//                 <motion.div
-//                     initial={{ opacity: 0, y: 20 }}
-//                     animate={{ opacity: 1, y: 0 }}
-//                     transition={{ duration: 0.5 }}
-//                     className="bg-white rounded-3xl shadow-md p-8"
-//                     >
-
-//                     <div className="mb-8 p-4 bg-red-600 rounded-xl shadow-md text-center">
-//                         <h1 className="text-3xl font-bold text-white">Purchase</h1>
-//                     </div>
-
-//                     <div className="w-full overflow-x-auto">
-//                         <table className="min-w-max border border-gray-200 rounded-xl whitespace-nowrap text-xs">
-//                             <thead className="bg-gray-200 text-left rounded-t-xl">
-//                                 <tr>
-//                                     <th className="px-4 py-3 border-b">Transporter Name</th>
-//                                     <th className="px-4 py-3 border-b">Supplier Name</th>
-//                                     <th className="px-4 py-3 border-b">Freight Charges</th>
-//                                     <th className="px-4 py-3 border-b">Loading/ Unloading Charge</th>
-//                                     <th className="px-4 py-3 border-b">Free Period (Demurrage free days)</th>
-//                                     <th className="px-4 py-3 border-b">Per Day Charge</th>
-//                                     <th className="px-4 py-3 border-b">Insurance</th>
-//                                     <th className="px-4 py-3 border-b">Insurance coverage carried by</th>
-//                                     <th className="px-4 py-3 border-b">Loading Location</th>
-//                                     <th className="px-4 py-3 border-b">Loading State</th>
-//                                     <th className="px-4 py-3 border-b">Delivery Point</th>
-//                                     <th className="px-4 py-3 border-b">Distance in Km</th>
-//                                     <th className="px-4 py-3 border-b">Route</th>
-//                                     <th className="px-4 py-3 border-b">Mode of Delivery</th>
-//                                     <th className="px-4 py-3 border-b">Start Date</th>
-//                                     <th className="px-4 py-3 border-b">Transit Time (Days)</th>
-//                                     <th className="px-4 py-3 border-b">Trasporter contact details</th>
-//                                     <th className="px-4 py-3 border-b">Driver Contact Details</th>
-//                                     <th className="px-4 py-3 border-b">Vehicle Type</th>
-//                                     <th className="px-4 py-3 border-b">Vehicle Number</th>
-//                                     <th className="px-4 py-3 border-b">Vehicle Loading Capacity (Ton)</th>
-//                                     <th className="px-4 py-3 border-b">Required Documents (LR  / GR ) No</th>
-//                                     <th className="px-4 py-3 border-b">Required Documents (E-way Bill  & Invoice)</th>
-//                                     <th className="px-4 py-3 border-b">PAN CARD (Freight Invoice)</th>
-//                                     <th className="px-4 py-3 border-b">Tracking System</th>
-//                                     <th className="px-4 py-3 border-b">Payment Terms</th>
-//                                     <th className="px-4 py-3 border-b">Dimension (Length Ft)</th>
-//                                     <th className="px-4 py-3 border-b">Material Weight (Ton) </th>
-//                                     <th className="px-4 py-3 border-b">Special Conditions</th>
-//                                     <th className="px-4 py-3 border-b">Material Received</th>
-//                                     <th className="px-4 py-3 border-b">Invoice Number</th>
-//                                     <th className="px-4 py-3 border-b">Received Date</th>
-//                                     <th className="px-4 py-3 border-b">FINAL PAYMENT UTR</th>
-//                                     <th className="px-4 py-3 border-b">FINAL PAYMENT DATE</th>
-//                                     <th className="px-4 py-3 border-b">UNIT</th>
-//                                     <th className="px-4 py-3 border-b">REMARKS</th>
-//                                 </tr>
-//                             </thead>
-
-//                             <tbody>
-//                                 {/* {tableData.map((row, index) => (
-//                                 <>
-//                                     <tr
-//                                         key={row._id || index}
-//                                         className={`${index % 2 === 0 ? "bg-gray-50 h-4" : "bg-white h-4"} hover:bg-red-50 transition`}
-//                                     ></tr>
-//                                 </>
-//                                 ))} */}
-//                             </tbody>
-//                         </table>
-//                     </div>
-                        
-//                 </motion.div>
-//             </main>
-//         </div>
-//     )
-// }
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createTransportRecords, getAllTransportRecords, updateTransportRecords } from "../api/Transport.api";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaChevronDown, FaSignOutAlt } from "react-icons/fa";
 import axios from "axios";
 
 const emptyRow = {
@@ -291,24 +170,67 @@ const handleSubmit = async () => {
   return (
     <div className="min-h-screen bg-gray-100 font-poppins">
       {/* ------------------ TOP NAVBAR ------------------ */}
-      <nav className="w-full py-6 px-10 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <FaShoppingCart className="text-red-600 text-5xl" />
-          <h1
-            className="text-4xl font-bold"
-            style={{ fontFamily: "'Agu Display', sans-serif" }}
-          >
-            PURCHASE MANAGEMENT SYSTEM
-          </h1>
-        </div>
-
-        <button
-          onClick={handleLogout}
-          className="px-5 py-2 bg-red-600 text-white rounded-full"
-        >
-          Logout
-        </button>
-      </nav>
+      <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
+              {/* Left Section */}
+              <div className="flex items-center gap-4">
+                <FaShoppingCart className="text-red-600 text-5xl" />
+                <h1
+                  className="text-4xl font-bold tracking-wide text-gray-900"
+                  style={{ fontFamily: "'Agu Display', sans-serif" }}
+                >
+                  PURCHASE MANAGEMENT SYSTEM
+                </h1>
+              </div>
+      
+              {/* Right User Profile */}
+              <div className="relative group">
+                {/* Profile Button */}
+                <div className="flex items-center gap-3 cursor-pointer select-none">
+                  
+                  {/* Flower-style Avatar */}
+                  <div className="relative w-11 h-11 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-red-500 opacity-80 blur-[1px]"></div>
+                    <div className="relative w-10 h-10 rounded-full bg-red-600 flex items-center justify-center ring-2 ring-red-300 shadow-md">
+                      <span className="text-white font-extrabold text-lg uppercase">
+                        {localStorage.getItem("username")?.charAt(0)}
+                      </span>
+                    </div>
+                  </div>
+      
+                  {/* Username (role) */}
+                  <span className="font-medium text-gray-800 whitespace-nowrap">
+                    {localStorage.getItem("username")}
+                    {localStorage.getItem("role") && (
+                      <span className="text-sm text-gray-500 ml-1">
+                        ({localStorage.getItem("role")})
+                      </span>
+                    )}
+                  </span>
+      
+                  {/* Triangle */}
+                  <FaChevronDown className="text-gray-600 transition-transform group-hover:rotate-180" />
+                </div>
+      
+                {/* Hover Chat Box */}
+                <div className="absolute right-0 mt-3 w-44 bg-white rounded-xl shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  
+                  {/* Triangle Pointer */}
+                  <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
+      
+                  {/* Logout */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700
+                              border border-transparent rounded-xl
+                              hover:border-red-600 hover:bg-red-50 hover:text-red-600
+                              transition"
+                  >
+                    <FaSignOutAlt />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </nav>
 
       {/* ------------------ MAIN CONTENT ------------------ */}
       <main className="px-6 py-10">

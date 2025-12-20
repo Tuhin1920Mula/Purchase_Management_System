@@ -117,6 +117,22 @@ export const updatePurchase = async (req, res) => {
       updateData.timeDelayPoGeneration = calculateDelayDays(planned, actual);
     }
 
+    /* -------- (ix) Planned PWP -------- */
+    if (updateData.poDate) {
+      const baseDate = new Date(updateData.poDate);
+      const plannedDate = addWorkingDays(baseDate, 2);
+      updateData.plannedPaymentPWP = plannedDate
+        .toISOString()
+        .split("T")[0];
+    }
+
+    /* -------- (x) Time Delay PWP -------- */
+    if (updateData.actualPaymentPWP && purchase.plannedPaymentPWP) {
+      const planned = new Date(purchase.plannedPaymentPWP);
+      const actual = new Date(updateData.actualPaymentPWP);
+      updateData.timeDelayPaymentPWP = calculateDelayDays(planned, actual);
+    }
+
     const updated = await Purchase.findByIdAndUpdate(
       req.params.id,
       updateData,

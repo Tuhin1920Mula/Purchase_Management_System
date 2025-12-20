@@ -18,6 +18,8 @@ import {
   FaStore,
   FaClipboardList,
   FaUserPlus,
+  FaChevronDown,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { getAllIndentForms, getAllLocalPurchaseForms, updatePurchaseRow, updateLocalPurchaseRow } from "../../api/IndentForm.api";
@@ -73,6 +75,7 @@ const getNavLinksByRole = (role) => {
         { name: "PC Follow Up", icon: <FaPhoneAlt /> },
         { name: "Payment Follow Up", icon: <FaRegMoneyBillAlt /> },
         { name: "Local Purchase", icon: <FaStore /> },
+        { name: "Transport", icon: <FaShip /> },
       ],
     };
   }
@@ -101,14 +104,17 @@ export default function PurchasePage() {
   const [saving, setSaving] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [pdfPreview, setPdfPreview] = useState({});
-  const [pcFollowUp, setPcFollowUp] = useState(""); // "", "PC1", "PC2", "PC3"
+  const [pcFollowUp, setPcFollowUp] = useState("PC1"); // "", "PC1", "PC2", "PC3"
+  const [paymentFollowUp, setPaymentFollowUp] = useState("PWP");
   const [findBy, setFindBy] = useState("");
   const [selectedSite, setSelectedSite] = useState("");
   const [date, setDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const pcIndex = pcFollowUp?.replace("PC", ""); // "1" | "2" | "3"
+  //const pcIndex = pcFollowUp?.replace("PC", ""); // "1" | "2" | "3"
+  const pcIndex = selectedOption === "PC Follow Up" ? pcFollowUp.replace("PC", ""): null;
+  const paymentKey = selectedOption === "Payment Follow Up" ? paymentFollowUp : null;
 
   // keep ref in-sync whenever state changes
   useEffect(() => {
@@ -383,7 +389,7 @@ export default function PurchasePage() {
   return (
     <div className="min-h-screen bg-gray-100 font-poppins">
       {/* ------------------ TOP NAVBAR ------------------ */}
-      <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
+      {/* <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
         <div className="flex items-center gap-4">
           <FaShoppingCart className="text-red-600 text-5xl" />
           <h1
@@ -400,6 +406,68 @@ export default function PurchasePage() {
         >
           Logout
         </button>
+      </nav> */}
+
+      <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
+        {/* Left Section */}
+        <div className="flex items-center gap-4">
+          <FaShoppingCart className="text-red-600 text-5xl" />
+          <h1
+            className="text-4xl font-bold tracking-wide text-gray-900"
+            style={{ fontFamily: "'Agu Display', sans-serif" }}
+          >
+            PURCHASE MANAGEMENT SYSTEM
+          </h1>
+        </div>
+
+        {/* Right User Profile */}
+        <div className="relative group">
+          {/* Profile Button */}
+          <div className="flex items-center gap-3 cursor-pointer select-none">
+            
+            {/* Flower-style Avatar */}
+            <div className="relative w-11 h-11 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-red-500 opacity-80 blur-[1px]"></div>
+              <div className="relative w-10 h-10 rounded-full bg-red-600 flex items-center justify-center ring-2 ring-red-300 shadow-md">
+                <span className="text-white font-extrabold text-lg uppercase">
+                  {localStorage.getItem("username")?.charAt(0)}
+                </span>
+              </div>
+            </div>
+
+            {/* Username (role) */}
+            <span className="font-medium text-gray-800 whitespace-nowrap">
+              {localStorage.getItem("username")}
+              {localStorage.getItem("role") && (
+                <span className="text-sm text-gray-500 ml-1">
+                  ({localStorage.getItem("role")})
+                </span>
+              )}
+            </span>
+
+            {/* Triangle */}
+            <FaChevronDown className="text-gray-600 transition-transform group-hover:rotate-180" />
+          </div>
+
+          {/* Hover Chat Box */}
+          <div className="absolute right-0 mt-3 w-44 bg-white rounded-xl shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            
+            {/* Triangle Pointer */}
+            <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700
+                        border border-transparent rounded-xl
+                        hover:border-red-600 hover:bg-red-50 hover:text-red-600
+                        transition"
+            >
+              <FaSignOutAlt />
+              Logout
+            </button>
+          </div>
+        </div>
       </nav>
 
       {/* ------------------ SIDEBAR ------------------ */}
@@ -417,7 +485,14 @@ export default function PurchasePage() {
                     return (
                       <li
                         key={link.name}
-                        onClick={() => setSelectedOption(link.name)}
+                        //onClick={() => setSelectedOption(link.name)}
+                        onClick={() => {
+                          if (link.name === "Transport") {
+                            navigate("/transport"); // route that renders <Transport />
+                          } else {
+                            setSelectedOption(link.name);
+                          }
+                        }}
                         className={`
                           flex items-center gap-3 p-3 rounded-xl cursor-pointer transition shadow-sm
                           bg-gray-100 hover:bg-red-100
@@ -495,17 +570,17 @@ export default function PurchasePage() {
             {selectedOption === "Payment Follow Up" && (
               <>
                 {[
-                  { key: "FAR", label: "After Receive Material / FAR" },
-                  { key: "PO", label: "Payment Along with PO" },
+                  { key: "PWP", label: "Payment Along with PO" },
                   { key: "BBD", label: "Balance Before Dispatch" },
+                  { key: "FAR", label: "After Receive Material / FAR" },
                   { key: "PAPW", label: "Payment After Performance Warranty / PAPW" },
                 ].map((item) => (
                   <button
                     key={item.key}
-                    onClick={() => setPcFollowUp(item.key)}
+                    onClick={() => setPaymentFollowUp(item.key)}
                     className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition
                       ${
-                        pcFollowUp === item.key
+                        paymentFollowUp === item.key
                           ? "bg-red-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-red-100"
                       }`}
@@ -634,6 +709,7 @@ export default function PurchasePage() {
                       {/* ------------------------- CONDITIONAL HEADERS ------------------------- */}
                       {selectedOption === "PMS Master Sheet" && (
                         <>
+                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
                           <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
                           <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
                           <th className="px-4 py-3 border-b text-red-700">Send for Get Quotation</th>
@@ -732,13 +808,21 @@ export default function PurchasePage() {
                         </>
                       )}
 
-                      {selectedOption === "PC Follow Up" && (
+                      {(selectedOption === "PC Follow Up" || selectedOption === "Payment Follow Up") && (
                         <>
                           <th className="px-4 py-3 border-b text-red-700">PO Date</th>
                           <th className="px-4 py-3 border-b text-red-700">PO Number</th>
                           <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
                           <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
                           <th className="px-4 py-3 border-b text-red-700">Payment Condition</th>
+
+                          {/* Extra column only for Payment Follow Up */}
+                          {selectedOption === "Payment Follow Up" && (
+                            <th className="px-4 py-3 border-b text-red-700">
+                              Transaction Number
+                            </th>
+                          )}
+
                           <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
                           <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
                           <th className="px-4 py-3 border-b text-red-700">Follow Up Status</th>
@@ -1061,6 +1145,17 @@ export default function PurchasePage() {
                         {/* PMS Master Sheet */}
                         {selectedOption === "PMS Master Sheet" && (
                           <>
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={row.remarksIndentVerification ?? ""}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "remarksIndentVerification", e.target.value)
+                                }
+                              />
+                            </td>
+
                             <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
                               {row.plannedGetQuotation
                                 ? new Date(row.plannedGetQuotation)
@@ -1787,78 +1882,131 @@ export default function PurchasePage() {
                         )}
 
                         {/* PC Follow Up */}
-                        {selectedOption === "PC Follow Up" && pcIndex && (
-  <>
-    <td className="px-4 py-2 border-b">{row.poDate}</td>
-    <td className="px-4 py-2 border-b">{row.poNumber}</td>
-    <td className="px-4 py-2 border-b">{row.vendorName}</td>
-    <td className="px-4 py-2 border-b">{row.leadDays}</td>
-    <td className="px-4 py-2 border-b">{row.paymentCondition}</td>
+                        {((selectedOption === "PC Follow Up" && pcIndex) || (selectedOption === "Payment Follow Up" && paymentKey)) && (
+                          <>
+                            {/* Common fields */}
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.poDate
+                                ? new Date(row.poDate)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
+                            </td>
+                            <td className="px-4 py-2 border-b">{row.poNumber}</td>
+                            <td className="px-4 py-2 border-b">{row.vendorName}</td>
+                            <td className="px-4 py-2 border-b">{row.leadDays}</td>
+                            <td className="px-4 py-2 border-b">{row.paymentCondition}</td>
 
-    {/* Planned */}
-    <td className="px-4 py-2 border-b">
-      {row[`plannedPCFollowUp${pcIndex}`]}
-    </td>
+                            {/* Transaction Number (Payment Follow Up only) */}
+                            {selectedOption === "Payment Follow Up" && (
+                              <td className="px-4 py-2 border-b">
+                                <input
+                                  type="text"
+                                  className="border p-1 rounded"
+                                  value={row[`transactionNoPayment${paymentKey}`] ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldChange(row._id, `transactionNoPayment${paymentKey}`, e.target.value)
+                                  }
+                                />
+                              </td>
+                            )}
 
-    {/* Actual */}
-    <td className="px-4 py-2 border-b">
-      <input
-        type="date"
-        className="border p-1 rounded"
-        value={row[`actualPCFollowUp${pcIndex}`] ?? ""}
-        onChange={(e) =>
-          handleFieldChange(
-            row._id,
-            `actualPCFollowUp${pcIndex}`,
-            e.target.value
-          )
-        }
-      />
-    </td>
+                            {/* Planned */}
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {(
+                                selectedOption === "PC Follow Up"
+                                  ? row[`plannedPCFollowUp${pcIndex}`]
+                                  : row[`plannedPayment${paymentKey}`]
+                              )
+                                ? new Date(
+                                    selectedOption === "PC Follow Up"
+                                      ? row[`plannedPCFollowUp${pcIndex}`]
+                                      : row[`plannedPayment${paymentKey}`]
+                                  )
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
+                            </td>
 
-    {/* Status */}
-    <td className="px-4 py-2 border-b">
-      <select
-        className="border p-1 rounded"
-        value={row[`statusPCFollowUp${pcIndex}`] ?? ""}
-        onChange={(e) =>
-          handleFieldChange(
-            row._id,
-            `statusPCFollowUp${pcIndex}`,
-            e.target.value
-          )
-        }
-      >
-        <option value="">--Select--</option>
-        <option value="Hold">Hold</option>
-        <option value="Cancelled">Cancelled</option>
-        <option value="Done">Done</option>
-        <option value="Pending">Pending</option>
-      </select>
-    </td>
+                            {/* Actual */}
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="date"
+                                className="border p-1 rounded"
+                                value={
+                                  selectedOption === "PC Follow Up"
+                                    ? row[`actualPCFollowUp${pcIndex}`] ?? ""
+                                    : row[`actualPayment${paymentKey}`] ?? ""
+                                }
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    selectedOption === "PC Follow Up"
+                                      ? `actualPCFollowUp${pcIndex}`
+                                      : `actualPayment${paymentKey}`,
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </td>
 
-    {/* Time Delay */}
-    <td className="px-4 py-2 border-b">
-      {row[`timeDelayPCFollowUp${pcIndex}`]}
-    </td>
+                            {/* Status */}
+                            <td className="px-4 py-2 border-b">
+                              <select
+                                className="border p-1 rounded"
+                                value={
+                                  selectedOption === "PC Follow Up"
+                                    ? row[`statusPCFollowUp${pcIndex}`] ?? ""
+                                    : row[`statusPayment${paymentKey}`] ?? ""
+                                }
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    selectedOption === "PC Follow Up"
+                                      ? `statusPCFollowUp${pcIndex}`
+                                      : `statusPayment${paymentKey}`,
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="">--Select--</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Done">Done</option>
+                                <option value="Pending">Pending</option>
+                              </select>
+                            </td>
 
-    {/* Remarks */}
-    <td className="px-4 py-2 border-b">
-      <input
-        type="text"
-        className="border p-1 rounded"
-        value={row[`remarksPCFollowUp${pcIndex}`] ?? ""}
-        onChange={(e) =>
-          handleFieldChange(
-            row._id,
-            `remarksPCFollowUp${pcIndex}`,
-            e.target.value
-          )
-        }
-      />
-    </td>
-  </>
-)}
+                            {/* Time Delay */}
+                            <td className="px-4 py-2 border-b">
+                              {selectedOption === "PC Follow Up"
+                                ? row[`timeDelayPCFollowUp${pcIndex}`]
+                                : row[`timeDelayPayment${paymentKey}`]}
+                            </td>
+
+                            {/* Remarks */}
+                            <td className="px-4 py-2 border-b">
+                              <input
+                                type="text"
+                                className="border p-1 rounded"
+                                value={
+                                  selectedOption === "PC Follow Up"
+                                    ? row[`remarksPCFollowUp${pcIndex}`] ?? ""
+                                    : row[`remarksPayment${paymentKey}`] ?? ""
+                                }
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    selectedOption === "PC Follow Up"
+                                      ? `remarksPCFollowUp${pcIndex}`
+                                      : `remarksPayment${paymentKey}`,
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </td>
+                          </>
+                        )}
 
                         {/* MATERIAL RECEIVED */}
                         {selectedOption === "Material Received" && (

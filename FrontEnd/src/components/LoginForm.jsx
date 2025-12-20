@@ -47,6 +47,7 @@ export default function LoginForm() {
       setRole("ADMIN");
       setIsLoggedIn(true);
       localStorage.setItem("role", "ADMIN");
+      localStorage.setItem("username", username);
     } else if (success === "InputUser") {
       setRole("InputUser");
       setIsLoggedIn(true);
@@ -55,6 +56,7 @@ export default function LoginForm() {
       setRole("DEO");
       setIsLoggedIn(true);
       localStorage.setItem("role", "DEO");
+      localStorage.setItem("username", username);
     } else if (success === "PSE") {
       setRole("PSE");
       setIsLoggedIn(true);

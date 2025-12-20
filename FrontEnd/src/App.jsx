@@ -4,6 +4,7 @@ import IndentFormPage from "./pages/IndentFormPage";
 import LoginPage from "./pages/LoginPage";
 import AddUserPage from "./pages/AddUserPage";
 import PurchasePage from "./pages/PurchasePage";
+import TransportPage from "./pages/TransportPage";
 PurchasePage
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
           <Route path="/" element={<LoginPage />} />
           <Route path="/add-user" element={<AddUserPage />} />
           <Route path="/purchase" element={<PurchasePage />} />
+          <Route path="/transport" element={<TransportPage />} />
         </Routes>
       </BrowserRouter>    
   );
