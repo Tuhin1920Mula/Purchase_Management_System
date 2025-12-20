@@ -78,6 +78,14 @@ export async function getLatestUniqueId() {
   return response;
 }
 
+export async function getLatestLocalPurchaseUniqueId() {
+  const response = await apiRequest("/indent/latest/localpurchase/unique-id", "GET");
+
+  console.log("Latest Unique ID from backend:", response);
+
+  return response;
+}
+
 // let globalChangedRows = {};  // stores last "changedRows" data
 
 // export const setChangedRowsForLogging = (rows) => {
@@ -108,6 +116,30 @@ export const updatePurchaseRow = async (id, updatedData) => {
   }
 };
 
+export const updateLocalPurchaseRow = async (id, updatedData) => {
+  try {
+    // console.log("===============================================");
+    // console.log("📤 ALL CHANGED ROWS BEING SENT:");
+    // console.log(JSON.stringify(globalChangedRows, null, 2));
+    // console.log("===============================================");
+
+    // console.log("📤 CURRENT API CALL → Sending update to backend");
+    // console.log("➡️ ID:", id);
+    // console.log("➡️ Payload:", JSON.stringify(updatedData, null, 2));
+
+    //const response = await axios.put(`/indent/purchase/update/${id}`, updatedData);
+    const response = await apiRequest(`/indent/localpurchase/update/${id}`, "PUT", updatedData);
+
+    console.log("✅ Backend Response:", response.data);
+    console.log("===============================================");
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error updating purchase row:", error);
+    throw error;
+  }
+};
+
 /**
  * =====================================================
  * 📌 Indent Form API Functions (Same structure & logs)
@@ -119,6 +151,11 @@ export async function createIndentForm(data) {
   return await apiRequest("/indent", "POST", data);
 }
 
+export async function createLocalPurchaseForm(data) {
+  console.log("📝 Creating Local Purchase Form:", data);
+  return await apiRequest("/indent/localpurchase", "POST", data);
+}
+
 // export async function getAllIndentForms(queryParams = "") {
 //   console.log("📥 Fetching All Indent Forms");
 //   return await apiRequest("/indent", "GET", null, queryParams);
@@ -126,12 +163,12 @@ export async function createIndentForm(data) {
 
 export async function getAllIndentForms(role, username) {
   console.log("📥 Fetching All Indent Forms With Role & Username");
+  return await apiRequest("/indent/all", "POST", role, username);
+}
 
-  return await apiRequest(
-    "/indent/all",
-    "POST",
-    role, username
-  );
+export async function getAllLocalPurchaseForms(role, username) {
+  console.log("📥 Fetching All Local Purchase Forms With Role & Username");
+  return await apiRequest("/indent/localpurchase/all", "POST", role, username);
 }
 
 export async function getIndentFormById(indentId) {

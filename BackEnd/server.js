@@ -3,6 +3,7 @@ import dotenvFlow from "dotenv-flow";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import loginRoutes from "./routes/login.routes.js";
+import adduserRoutes from "./routes/adduser.routes.js";
 import transportRoutes from "./routes/transport.routes.js";
 
 // Routes
@@ -61,6 +62,7 @@ app.use(
 //app.use("/auth", loginRoutes);
 app.use("/indent", purchaseRoutes);  // ✅ Added in the same style
 app.use("/auth", loginRoutes);
+app.use("/adduser", adduserRoutes);
 app.use("/transport", transportRoutes);
 
 // ===============================

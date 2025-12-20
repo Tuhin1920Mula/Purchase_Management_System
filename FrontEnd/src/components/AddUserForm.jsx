@@ -1,31 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaUser, FaLock, FaShoppingCart } from "react-icons/fa";
+import { FaUser, FaLock, FaShoppingCart, FaIdBadge } from "react-icons/fa";
 import { Eye, EyeOff } from "lucide-react";
-import loginImg from "../assets/LoginBgImg.png";
+import loginImg from "../assets/AddUserImg.png";
+import { useNavigate } from "react-router-dom";
 
-import PurchasePage from "../pages/PurchasePage";
-import Transport from "./Transport";
-import IndentFormPage from "../pages/IndentFormPage";
-import { loginUser } from "../api/Login.api";
+import { addUser } from "../api/AddUser.api";
 
-export default function LoginForm() {
+export default function AddUser() {
+    const navigate = useNavigate();
   // ================= STATES =================
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [designation, setDesignation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState("");
-
-  // Load Role On Page Refresh
-  useEffect(() => {
-    const savedRole = localStorage.getItem("role");
-    if (savedRole) {
-      setRole(savedRole);
-      setIsLoggedIn(true);
-    }
-  }, []);
 
   // Inject Google Agu Font
   useEffect(() => {
@@ -36,65 +24,51 @@ export default function LoginForm() {
     document.head.appendChild(link);
   }, []);
 
-  // ================= HANDLE LOGIN =================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  // ================= HANDLE SUBMIT =================
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
 
-    const success = await loginUser({ username, password });
+//     const payload = {
+//       username,
+//       password,
+//       designation,
+//     };
 
-    if (success === "ADMIN") {
-      setRole("ADMIN");
-      setIsLoggedIn(true);
-      localStorage.setItem("role", "ADMIN");
-    } else if (success === "InputUser") {
-      setRole("InputUser");
-      setIsLoggedIn(true);
-      localStorage.setItem("role", "InputUser");
-    } else if (success === "DEO") {
-      setRole("DEO");
-      setIsLoggedIn(true);
-      localStorage.setItem("role", "DEO");
-    } else if (success === "PSE") {
-      setRole("PSE");
-      setIsLoggedIn(true);
-      localStorage.setItem("role", "PSE");
-      localStorage.setItem("username", username);
-    } else if (success === "PA") {
-      setRole("PA");
-      setIsLoggedIn(true);
-      localStorage.setItem("role", "PA");
-      localStorage.setItem("username", username);
-    } else if (success === "PC") {
-      setRole("PC");
-      setIsLoggedIn(true);
-      localStorage.setItem("role", "PC");
-      localStorage.setItem("username", username);
-    }
+//     console.log("Add User Payload:", payload);
+//     // 👉 Call your API here (e.g., addUser(payload))
+//   };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    username,
+    password,
+    designation,
   };
 
-  // ================= PAGE REDIRECT =================
-  if (isLoggedIn && role === "DEO") {
-    return <IndentFormPage />;
-  } else if (isLoggedIn && role === "PSE") {
-    return <PurchasePage />;
-  } else if (isLoggedIn && role === "PA") {
-    return <PurchasePage />;
-  } else if (isLoggedIn && role === "PC") {
-    //return <Transport />;
-    return <PurchasePage />;
-  } else if (isLoggedIn && role === "ADMIN") {
-    return <PurchasePage />;
-  }
+  const result = await addUser(payload);
 
-  // ================= LOGIN PAGE =================
+  if (result === "success") {
+    alert("User added successfully"); // waits for OK click
+
+    setUsername("");
+    setPassword("");
+    setDesignation("");
+
+    // 🔁 Redirect ADMIN back to Purchase Page
+    navigate("/purchase"); // change if your route differs
+  } else {
+    alert(result || "Failed to add user");
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-100">
 
       {/* NAVBAR */}
       <nav className="w-full py-8 px-12 flex items-center gap-5 mt-4 bg-transparent">
         <FaShoppingCart className="text-red-600 text-6xl" />
-
         <h1
           className="text-6xl font-bold tracking-wide text-gray-900"
           style={{ fontFamily: "'Agu Display', sans-serif" }}
@@ -105,7 +79,6 @@ export default function LoginForm() {
 
       {/* MAIN CONTENT */}
       <div className="flex items-center justify-center p-10 mt-[-20px]">
-
         <div className="flex flex-col md:flex-row gap-10">
 
           {/* LEFT FORM CARD */}
@@ -114,26 +87,27 @@ export default function LoginForm() {
             style={{ fontFamily: "Poppins, sans-serif" }}
           >
             <h2 className="text-4xl font-semibold mb-2 text-gray-800">
-              Welcome Back
+              Add New User
             </h2>
 
             <p className="text-md text-gray-600 mb-8">
-              Sign in to your account
+              Create a new system user
             </p>
 
             <form onSubmit={handleSubmit}>
-              {/* USERNAME */}
+              {/* USER NAME */}
               <label className="text-left font-medium text-gray-700 flex items-center gap-2 pl-1 mb-2">
-                <FaUser className="text-gray-600" /> Username
+                <FaUser className="text-gray-600" /> User Name
               </label>
 
               <div className="flex items-center bg-gray-200 rounded-full px-4 py-3 mb-5">
                 <input
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder="Enter user name"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="flex-1 bg-transparent outline-none text-[16px]"
+                  required
                 />
               </div>
 
@@ -145,10 +119,11 @@ export default function LoginForm() {
               <div className="flex items-center bg-gray-200 rounded-full px-4 py-3 mb-5">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="flex-1 bg-transparent outline-none text-[16px]"
+                  required
                 />
 
                 <span
@@ -159,35 +134,45 @@ export default function LoginForm() {
                 </span>
               </div>
 
-              {/* ERROR MESSAGE */}
-              {error && (
-                <p className="text-red-600 text-sm mb-4 text-left pl-1">
-                  * Incorrect Username or Password
-                </p>
-              )}
+              {/* DESIGNATION */}
+              <label className="text-left font-medium text-gray-700 flex items-center gap-2 pl-1 mb-2">
+                <FaIdBadge className="text-gray-600" /> Designation
+              </label>
 
-              {/* LOGIN BUTTON */}
+              <div className="flex items-center bg-gray-200 rounded-full px-4 py-3 mb-6">
+                <select
+                  value={designation}
+                  onChange={(e) => setDesignation(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-[16px]"
+                  required
+                >
+                  <option value="">Select Designation</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="DEO">Data Entry Operator (DEO)</option>
+                  <option value="PA">Purchase Assistant (PA)</option>
+                  <option value="PC">Process Co-Ordinator (PC)</option>
+                  <option value="PSE">Purchase Senior Executive(PSE)</option>
+                </select>
+              </div>
+
+              {/* SUBMIT BUTTON */}
               <button
                 type="submit"
                 className="w-full text-white font-medium py-3 rounded-full 
-                          bg-gradient-to-r from-red-500 to-red-700 
-                          hover:opacity-90 transition"
+                           bg-gradient-to-r from-red-500 to-red-700 
+                           hover:opacity-90 transition"
               >
-                LOGIN
+                ADD USER
               </button>
             </form>
-
-            <p className="text-sm text-gray-500 mt-3 cursor-pointer hover:text-gray-700">
-              Forgot Username / Password?
-            </p>
           </div>
 
           {/* RIGHT IMAGE */}
           <div className="w-[760px] md:w-[900px] h-[600px] flex items-center justify-center">
             <motion.img
               src={loginImg}
-              alt="Login Illustration"
-              className="w-full h-full object-cover rounded-xl"
+              alt="Add User Illustration"
+              className="w-full h-full object-contain rounded-xl"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}

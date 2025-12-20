@@ -1,4 +1,6 @@
+import { uploadToGoogleDrive } from "../config/googleDrive.js";
 import Purchase from "../models/purchase.model.js";
+import LocalPurchase from "../models/localpurchase.model.js";
 
 /* ------------------ Indian Holidays (YYYY-MM-DD) ------------------ */
 const INDIAN_HOLIDAYS = [
@@ -48,7 +50,8 @@ export const updatePurchase = async (req, res) => {
     }
 
     /* -------- (i) Planned Get Quotation -------- */
-    if (purchase.date && !purchase.plannedGetQuotation) {
+    //if (purchase.date && !purchase.plannedGetQuotation) {
+    if (purchase.date) {
       const baseDate = new Date(purchase.date); // YYYY-MM-DD
       const plannedDate = addWorkingDays(baseDate, 3);
       updateData.plannedGetQuotation = plannedDate
@@ -64,9 +67,10 @@ export const updatePurchase = async (req, res) => {
     }
 
     /* -------- (iii) Planned Technical Approval -------- */
-    if (purchase.actualGetQuotation && !purchase.plannedTechApproval) {
-      const baseDate = new Date(purchase.actualGetQuotation);
-      const plannedTechDate = addWorkingDays(baseDate, 4);
+    //if (purchase.actualGetQuotation && !purchase.plannedTechApproval) {
+    if (updateData.actualGetQuotation) {
+      const baseDate = new Date(updateData.actualGetQuotation);
+      const plannedTechDate = addWorkingDays(baseDate, 3);
       updateData.plannedTechApproval = plannedTechDate
         .toISOString()
         .split("T")[0];
@@ -80,9 +84,10 @@ export const updatePurchase = async (req, res) => {
     }
 
     /* -------- (v) Planned Commercial Negotiation -------- */
-    if (purchase.actualTechApproval && !purchase.plannedCommercialNegotiation) {
-      const baseDate = new Date(purchase.actualTechApproval);
-      const plannedDate = addWorkingDays(baseDate, 4);
+    //if (purchase.actualTechApproval && !purchase.plannedCommercialNegotiation) {
+    if (updateData.actualTechApproval) {
+      const baseDate = new Date(updateData.actualTechApproval);
+      const plannedDate = addWorkingDays(baseDate, 3);
       updateData.plannedCommercialNegotiation = plannedDate
         .toISOString()
         .split("T")[0];
@@ -96,9 +101,10 @@ export const updatePurchase = async (req, res) => {
     }
 
     /* -------- (vii) Planned PO Generation -------- */
-    if (purchase.actualCommercialNegotiation && !purchase.plannedPoGeneration) {
-      const baseDate = new Date(purchase.actualCommercialNegotiation);
-      const plannedDate = addWorkingDays(baseDate, 4);
+    //if (purchase.actualCommercialNegotiation && !purchase.plannedPoGeneration) {
+    if (updateData.actualCommercialNegotiation) {
+      const baseDate = new Date(updateData.actualCommercialNegotiation);
+      const plannedDate = addWorkingDays(baseDate, 3);
       updateData.plannedPoGeneration = plannedDate
         .toISOString()
         .split("T")[0];
@@ -112,6 +118,25 @@ export const updatePurchase = async (req, res) => {
     }
 
     const updated = await Purchase.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    return res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("❌ Update error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const updateLocalPurchase = async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+
+    //const localpurchase = await LocalPurchase.findById(req.params.id);
+
+    const updated = await LocalPurchase.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
@@ -139,13 +164,27 @@ export const createIndentForm = async (req, res) => {
   }
 };
 
+export const createLocalPurchaseForm = async (req, res) => {
+  try {
+    const form = await LocalPurchase.create(req.body);
+    return res.status(201).json({
+      success: true,
+      message: "Local Purchase Form Created Successfully",
+      data: form,
+    });
+  } catch (error) {
+    console.error("❌ Error Creating Local Purchase Form:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 export const getLatestUniqueId = async (req, res) => {
   try {
     const lastRecord = await Purchase.findOne().sort({ createdAt: -1 });
 
     console.log("📌 Last record fetched from DB:", lastRecord);
 
-    // If no previous record found → start from "INT2_1"
+    // If no previous record found → start from "INT2_12000"
     if (!lastRecord) {
       console.log("ℹ️ No previous record found. Starting uniqueId from INT2_12000.");
       return res.json({
@@ -155,6 +194,47 @@ export const getLatestUniqueId = async (req, res) => {
     }
 
     const prevId = lastRecord.uniqueId;  // Example: "INT2_12000"
+    console.log("🔍 Unique ID from DB:", prevId);
+
+    // Split prefix and numeric part
+    const [prefix, numPart] = prevId.split("_");
+
+    // Convert only numeric part
+    const newNumber = Number(numPart) + 1;
+
+    // Rebuild new ID
+    const newUniqueId = `${prefix}_${newNumber}`;
+
+    console.log("✅ New Generated Unique ID:", newUniqueId);
+
+    return res.json({
+      success: true,
+      uniqueId: newUniqueId
+    });
+
+  } catch (error) {
+    console.error("❌ Error Fetching Latest Unique ID:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+//++++++++++++++++++++++++++++++++++
+export const getLatestLocalPurchaseUniqueId = async (req, res) => {
+  try {
+    const lastRecord = await LocalPurchase.findOne().sort({ createdAt: -1 });
+
+    console.log("📌 Last record fetched from DB:", lastRecord);
+
+    // If no previous record found → start from "INT2_12000"
+    if (!lastRecord) {
+      console.log("ℹ️ No previous record found. Starting uniqueId from INTLP2_12000.");
+      return res.json({
+        success: true,
+        uniqueId: "INTLP2_12000"
+      });
+    }
+
+    const prevId = lastRecord.uniqueId;  // Example: "INTLP2_12000"
     console.log("🔍 Unique ID from DB:", prevId);
 
     // Split prefix and numeric part
@@ -242,6 +322,33 @@ export const getAllIndentForms = async (req, res) => {
   }
 };
 
+export const getAllLocalPurchaseForms = async (req, res) => {
+  try {
+    const { role, username } = req.body;
+
+    let filter = {};
+
+    if (role === "PSE") {
+      filter = { submittedBy: username };
+    } else if (role === "PA") {
+      filter = { doerName: username };
+    }
+
+    const forms = await LocalPurchase.find(filter).sort({ createdAt: 1 });
+
+    return res.json({
+      success: true,
+      data: forms,
+    });
+
+  } catch (error) {
+    console.error("❌ Error Fetching Forms:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
 
 // export const getAllIndentForms = async (req, res) => {
 //   try {
@@ -374,58 +481,98 @@ export const rejectIndentForm = async (req, res) => {
 // ==========================
 // PDF Upload → Google Drive
 // ==========================
+// export const uploadComparisonPDF = async (req, res) => {
+//   try {
+//     const { rowId } = req.body;
+//     const file = req.file;
+
+//     if (!file) {
+//       return res.status(400).json({ success: false, message: "No file uploaded." });
+//     }
+
+//     if (!rowId) {
+//       return res.status(400).json({ success: false, message: "Row ID is missing." });
+//     }
+
+//     const fileMeta = {
+//       name: `comparison_${rowId}.pdf`,
+//       parents: ["YOUR_GOOGLE_DRIVE_FOLDER_ID"], // <<< replace here
+//     };
+
+//     const fileMedia = {
+//       mimeType: "application/pdf",
+//       body: Buffer.from(file.buffer),
+//     };
+
+//     const uploaded = await drive.files.create({
+//       requestBody: fileMeta,
+//       media: fileMedia,
+//       fields: "id",
+//     });
+
+//     const fileId = uploaded.data.id;
+
+//     await drive.permissions.create({
+//       fileId,
+//       requestBody: { role: "reader", type: "anyone" },
+//     });
+
+//     const fileUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+
+//     await Purchase.findByIdAndUpdate(rowId, { comparisonPdf: fileUrl });
+
+//     return res.json({
+//       success: true,
+//       fileUrl,
+//       message: "PDF uploaded & URL saved.",
+//     });
+
+//   } catch (error) {
+//     console.error("Upload PDF Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const uploadComparisonPDF = async (req, res) => {
   try {
     const { rowId } = req.body;
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ success: false, message: "No file uploaded." });
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
     }
 
     if (!rowId) {
-      return res.status(400).json({ success: false, message: "Row ID is missing." });
+      return res.status(400).json({
+        success: false,
+        message: "Row ID missing",
+      });
     }
 
-    const fileMeta = {
-      name: `comparison_${rowId}.pdf`,
-      parents: ["YOUR_GOOGLE_DRIVE_FOLDER_ID"], // <<< replace here
-    };
+    // 🚀 Upload to Google Drive
+    const fileUrl = await uploadToGoogleDrive(file, rowId);
 
-    const fileMedia = {
-      mimeType: "application/pdf",
-      body: Buffer.from(file.buffer),
-    };
-
-    const uploaded = await drive.files.create({
-      requestBody: fileMeta,
-      media: fileMedia,
-      fields: "id",
+    // 💾 Save URL in DB (ONLY here)
+    await Purchase.findByIdAndUpdate(rowId, {
+      comparisonPdf: fileUrl,
     });
 
-    const fileId = uploaded.data.id;
-
-    await drive.permissions.create({
-      fileId,
-      requestBody: { role: "reader", type: "anyone" },
-    });
-
-    const fileUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-
-    await Purchase.findByIdAndUpdate(rowId, { comparisonPdf: fileUrl });
-
-    return res.json({
+    return res.status(200).json({
       success: true,
       fileUrl,
-      message: "PDF uploaded & URL saved.",
     });
-
   } catch (error) {
-    console.error("Upload PDF Error:", error);
+    console.error("❌ Upload Comparison PDF Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
-      error: error.message,
+      message: "PDF upload failed",
     });
   }
 };

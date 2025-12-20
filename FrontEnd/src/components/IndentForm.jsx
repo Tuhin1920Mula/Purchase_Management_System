@@ -3,7 +3,7 @@ import { FaShoppingCart } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx"; // Vite-friendly
-import { createIndentForm, getLatestUniqueId } from "../api/IndentForm.api";
+import { createIndentForm, createLocalPurchaseForm, getLatestUniqueId, getLatestLocalPurchaseUniqueId } from "../api/IndentForm.api";
 
 export default function IndentCreationForm() {
 const navigate = useNavigate();
@@ -23,26 +23,31 @@ submittedBy: "",
 const [bulkData, setBulkData] = useState([]);
 const [showBulkUpload, setShowBulkUpload] = useState(false);
 const [bulkSubmittedBy, setBulkSubmittedBy] = useState("User");
+const [isLocalPurchase, setIsLocalPurchase] = useState(false);
 
 // ===========================
 // Fetch Latest Unique ID
 // ===========================
-useEffect(() => {
-async function fetchUniqueId() {
-try {
-const res = await getLatestUniqueId();
-if (res?.success) {
-setFormData((prev) => ({
-...prev,
-uniqueId: res.uniqueId.toString(),
-}));
-}
-} catch (error) {
-console.error("Error fetching unique ID:", error);
-}
-}
-fetchUniqueId();
-}, []);
+    useEffect(() => {
+    async function fetchUniqueId() {
+      try {
+        const res = isLocalPurchase
+          ? await getLatestLocalPurchaseUniqueId()
+          : await getLatestUniqueId();
+
+        if (res?.success) {
+          setFormData((prev) => ({
+            ...prev,
+            uniqueId: res.uniqueId.toString(),
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching unique ID:", error);
+      }
+    }
+
+    fetchUniqueId();
+  }, [isLocalPurchase]);
 
 // Agu Font Loader
 useEffect(() => {
@@ -56,30 +61,86 @@ document.head.appendChild(link);
 const handleChange = (e) =>
 setFormData({ ...formData, [e.target.name]: e.target.value });
 
-const handleSubmit = async (e) => {
-e.preventDefault();
-try {
-const totalQty = Number(formData.totalQuantity);
-if (isNaN(totalQty)) throw new Error("Total Quantity must be a number");
+// const handleSubmit = async (e) => {
+// e.preventDefault();
+// try {
+// const totalQty = Number(formData.totalQuantity);
+// if (isNaN(totalQty)) throw new Error("Total Quantity must be a number");
 
-await createIndentForm({ ...formData, totalQuantity: totalQty });
-alert("Indent Form Submitted Successfully!");
-const newId = await getLatestUniqueId();
-setFormData({
-site: "",
-section: "",
-uniqueId: newId.success ? newId.uniqueId.toString() : "",
-indentNumber: "",
-itemNumber: "",
-itemDescription: "",
-uom: "",
-totalQuantity: "",
-submittedBy: "",
-});
-} catch (error) {
-console.error(error);
-alert("Failed to submit form: " + error.message);
-}
+// await createIndentForm({ ...formData, totalQuantity: totalQty });
+// alert("Indent Form Submitted Successfully!");
+// const newId = await getLatestUniqueId();
+// setFormData({
+// site: "",
+// section: "",
+// uniqueId: newId.success ? newId.uniqueId.toString() : "",
+// indentNumber: "",
+// itemNumber: "",
+// itemDescription: "",
+// uom: "",
+// totalQuantity: "",
+// submittedBy: "",
+// });
+// } catch (error) {
+// console.error(error);
+// alert("Failed to submit form: " + error.message);
+// }
+// };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    // Validate totalQuantity
+    const totalQty = Number(formData.totalQuantity);
+    if (isNaN(totalQty)) {
+      throw new Error("Total Quantity must be a number");
+    }
+
+    let response;
+
+    if (isLocalPurchase) {
+      response = await createLocalPurchaseForm({
+        ...formData,
+        totalQuantity: totalQty,
+        localPurchase: true,
+      });
+    } else {
+      response = await createIndentForm({
+        ...formData,
+        totalQuantity: totalQty,
+      });
+    }
+
+    alert(
+      isLocalPurchase
+        ? "Local Purchase Submitted Successfully!"
+        : "Indent Form Submitted Successfully!"
+    );
+
+    // Fetch latest unique ID based on type
+    const newId = isLocalPurchase
+      ? await getLatestLocalPurchaseUniqueId()
+      : await getLatestUniqueId();
+
+    // Reset form
+    setFormData({
+      site: "",
+      section: "",
+      uniqueId: newId?.success ? newId.uniqueId.toString() : "",
+      indentNumber: "",
+      itemNumber: "",
+      itemDescription: "",
+      uom: "",
+      totalQuantity: "",
+      submittedBy: "",
+    });
+
+    setIsLocalPurchase(false);
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    alert("Failed to submit form: " + error.message);
+  }
 };
 
 const handleCancel = () => {
@@ -534,7 +595,7 @@ className="w-full p-3 bg-[#DFDDDD] rounded-xl"
 </div>
 
 {/* Buttons */}
-<div className="flex justify-end gap-4 pt-8">
+{/* <div className="flex justify-end gap-4 pt-8">
 <button
 type="button"
 onClick={handleCancel}
@@ -548,7 +609,38 @@ className="px-6 py-3 rounded-full bg-green-600 text-white hover:bg-green-700 tra
 >
 Submit
 </button>
-</div>
+</div> */}
+{/* Footer Section */}
+           <div className="flex justify-between items-center pt-8">
+             {/* Local Purchase Checkbox */}
+             <label className="flex items-center gap-2 text-gray-700 font-medium">
+              <input
+                 type="checkbox"
+                 checked={isLocalPurchase}
+                 onChange={(e) => setIsLocalPurchase(e.target.checked)}
+                 className="w-5 h-5 accent-red-600 cursor-pointer"
+               />
+               Local Purchase
+             </label>
+
+             {/* Buttons */}
+             <div className="flex gap-4">
+               <button
+                 type="button"
+                 onClick={handleCancel}
+                 className="px-6 py-3 rounded-full bg-red-600 text-white hover:bg-red-700 transition"
+               >
+                 Cancel
+               </button>
+
+               <button
+                 type="submit"
+                 className="px-6 py-3 rounded-full bg-green-600 text-white hover:bg-green-700 transition"
+               >
+                 Submit
+               </button>
+             </div>
+           </div>
 </motion.form>
 </div>
 </div>
