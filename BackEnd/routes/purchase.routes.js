@@ -15,6 +15,8 @@ import {
   uploadComparisonPDF,   // ✅ UNCOMMENT / ADD THIS
   approveIndentForm,
   rejectIndentForm,
+  showAllIndentForms,
+  add_to_localPurchase,
 } from "../controllers/purchase.controller.js";
 
 const router = express.Router();
@@ -36,14 +38,21 @@ const upload = multer({
 
 /* ------------------ Routes ------------------ */
 router.post("/", createIndentForm);
-router.post("/localpurchase", createLocalPurchaseForm);
-//router.get("/", getAllIndentForms);
 router.post("/all", getAllIndentForms);
+router.get("/all", showAllIndentForms);
+//router.get("/", getAllIndentForms);
+
+
+router.post("/localpurchase", createLocalPurchaseForm);
 router.post("/localpurchase/all", getAllLocalPurchaseForms);
-router.get("/latest/unique-id", getLatestUniqueId);
 router.get("/latest/localpurchase/unique-id", getLatestLocalPurchaseUniqueId);
-router.put("/purchase/update/:id", updatePurchase);
 router.put("/localpurchase/update/:id", updateLocalPurchase);
+router.post("/add-to-localPurchase", add_to_localPurchase);
+
+
+
+router.get("/latest/unique-id", getLatestUniqueId);
+router.put("/purchase/update/:id", updatePurchase);
 // router.put("/purchase/update/:id", (req, res, next) => {
 //   console.log("===============================================");
 //   console.log("📥 PURCHASE UPDATE ROUTE HIT");
