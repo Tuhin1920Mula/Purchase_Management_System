@@ -58,6 +58,7 @@ const getNavLinksByRole = (role) => {
         { name: "Comparison Statement", icon: <FaBalanceScale /> },
         { name: "Technical Approval", icon: <FaCheckCircle /> },
         { name: "Commercial Negotiation", icon: <FaHandshake /> },
+        { name: "PO Generation", icon: <FaFileSignature /> },
         { name: "Local Purchase", icon: <FaStore /> },
       ],
     };
@@ -164,6 +165,22 @@ export default function PurchasePage() {
   };
 
   // Ensures we update state using functional updater and also return updated for logging
+  // const handleFieldChange = (id, field, value) => {
+  //   setTableData(prev =>
+  //     prev.map(r => (r._id === id ? { ...r, [field]: value } : r))
+  //   );
+
+  //   // Track changed rows
+  //   setChangedRows(prev => ({
+  //     ...prev,
+  //     [id]: {
+  //       ...prev[id],
+  //       [field]: value,
+  //     },
+  //   }));
+
+  //   console.log("Updated Field:", { id, field, value });
+  // };
   const handleFieldChange = (id, field, value) => {
     setTableData((prev) =>
       prev.map((r) => (r._id === id ? { ...r, [field]: value } : r))
@@ -174,12 +191,77 @@ export default function PurchasePage() {
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: value,
-      },
-    }));
+  const today = new Date().toISOString().split("T")[0];
 
-    console.log("Updated Field:", { id, field, value });
-  };
+  const isGetQuotationDone = field === "doerStatus" && value === "Done";
+  const isGetQuotationNotDone = field === "doerStatus" && value !== "Done";
+
+  const isTechApprovalDone =
+    field === "technicalApprovalStatus" && value === "Done";
+  const isTechApprovalNotDone =
+    field === "technicalApprovalStatus" && value !== "Done";
+
+  const isCommercialDone =
+    field === "finalizeTermsStatus" && value === "Done";
+  const isCommercialNotDone =
+    field === "finalizeTermsStatus" && value !== "Done";
+
+  const isPoDone =
+    field === "poGenerationStatus" && value === "Done";
+  const isPoNotDone =
+    field === "poGenerationStatus" && value !== "Done";
+
+  setTableData((prev) =>
+    prev.map((r) => {
+      if (r._id !== id) return r;
+
+      return {
+        ...r,
+        [field]: value,
+
+        // Get Quotation
+        ...(isGetQuotationDone && { actualGetQuotation: today }),
+        ...(isGetQuotationNotDone && { actualGetQuotation: "" }),
+
+        // Technical Approval
+        ...(isTechApprovalDone && { actualTechApproval: today }),
+        ...(isTechApprovalNotDone && { actualTechApproval: "" }),
+
+        // Commercial Negotiation
+        ...(isCommercialDone && { actualCommercialNegotiation: today }),
+        ...(isCommercialNotDone && { actualCommercialNegotiation: "" }),
+
+        // PO Generation
+        ...(isPoDone && { actualPoGeneration: today }),
+        ...(isPoNotDone && { actualPoGeneration: "" }),
+      };
+    })
+  );
+
+  setChangedRows((prev) => ({
+    ...prev,
+    [id]: {
+      ...prev[id],
+      [field]: value,
+
+      // Get Quotation
+      ...(isGetQuotationDone && { actualGetQuotation: today }),
+      ...(isGetQuotationNotDone && { actualGetQuotation: "" }),
+
+      // Technical Approval
+      ...(isTechApprovalDone && { actualTechApproval: today }),
+      ...(isTechApprovalNotDone && { actualTechApproval: "" }),
+
+      // Commercial Negotiation
+      ...(isCommercialDone && { actualCommercialNegotiation: today }),
+      ...(isCommercialNotDone && { actualCommercialNegotiation: "" }),
+
+      // PO Generation
+      ...(isPoDone && { actualPoGeneration: today }),
+      ...(isPoNotDone && { actualPoGeneration: "" }),
+    },
+  }));
+};
 
   const toInputDateFormat = (dateStr) => {
     if (!dateStr) return "";
@@ -272,7 +354,22 @@ export default function PurchasePage() {
           );
         }
 
-        setTableData(filteredData);
+        // ✅ ADD THIS PART (DB SNAPSHOT)
+      const formattedData = filteredData.map(row => ({
+        ...row,
+        dbDoerName: row.doerName,
+        dbDoerStatus: row.doerStatus,
+        dbComparisonStatementStatus: row.comparisonStatementStatus,
+        dbTechnicalApprovalStatus: row.technicalApprovalStatus,
+        dbFinalizeTermsStatus: row.finalizeTermsStatus,
+        dbGetApproval: row.getApproval,
+        dbPoGenerationStatus: row.poGenerationStatus,
+      }));
+
+      // ✅ USE formattedData, NOT filteredData
+      setTableData(formattedData);
+
+        //setTableData(filteredData);
         latestDataRef.current = filteredData;
       } else {
         console.warn("⚠️ Unexpected response:", response);
@@ -1937,7 +2034,8 @@ const handleSubmitUpdates = async () => {
                         )}
 
                         {/* Indent Verification */}
-                        {selectedOption === "Indent Verification" && (
+                        {selectedOption === "Indent Verification" && 
+                          row.dbDoerName === "" && (
                           <>
                             <td className="px-4 py-2 border-b">
                               <input
@@ -1957,7 +2055,12 @@ const handleSubmitUpdates = async () => {
                         )}
 
                         {/* GET QUOTATION */}
-                        {selectedOption === "Get Quotation" && (
+                        {selectedOption === "Get Quotation" &&
+                          row.doerName !== "" &&
+                          (
+                            row.dbDoerStatus !== "Done" ||
+                            row.dbComparisonStatementStatus !== "Done"
+                          ) && (
                           <>
                             <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
                               {row.plannedGetQuotation
@@ -1966,20 +2069,13 @@ const handleSubmitUpdates = async () => {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-
-                            <td className="px-4 py-2 border-b">
-                              <input
-                                type="date"
-                                className="border p-1 rounded"
-                                value={row.actualGetQuotation ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "actualGetQuotation",
-                                    e.target.value
-                                  )
-                                }
-                              />
+                            
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.actualGetQuotation
+                                ? new Date(row.actualGetQuotation)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
                             </td>
 
                             <td className="px-4 py-2 border-b">
@@ -2016,6 +2112,8 @@ const handleSubmitUpdates = async () => {
                               >
                                 <option value="">--Select--</option>
                                 <option value="Done">Done</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
                               </select>
                             </td>
 
@@ -2041,25 +2139,21 @@ const handleSubmitUpdates = async () => {
                         )}
 
                         {/* TECHNICAL APPROVAL */}
-                        {selectedOption === "Technical Approval" && (
+                        {selectedOption === "Technical Approval" &&
+                          row.dbDoerStatus === "Done" &&
+                          row.dbComparisonStatementStatus === "Done" &&
+                          row.dbTechnicalApprovalStatus !== "Done" && (
                           <>
                             <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
                               {row.plannedTechApproval}
                             </td>
-
-                            <td className="px-4 py-2 border-b">
-                              <input
-                                type="date"
-                                className="border p-1 rounded"
-                                value={row.actualTechApproval ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "actualTechApproval",
-                                    e.target.value
-                                  )
-                                }
-                              />
+                            
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.actualTechApproval
+                                ? new Date(row.actualTechApproval)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
                             </td>
 
                             <td className="px-4 py-2 border-b">
@@ -2119,110 +2213,94 @@ const handleSubmitUpdates = async () => {
                         )}
 
                         {/* COMMERCIAL NEGOTIATION */}
-                        {selectedOption === "Commercial Negotiation" && (
-                          <>
-                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
-                              {row.plannedCommercialNegotiation}
-                            </td>
+                        {selectedOption === "Commercial Negotiation" &&
+                          row.technicalApprovalStatus === "Done" &&
+                        (
+                          row.dbFinalizeTermsStatus !== "Done" ||
+                          row.dbGetApproval !== "Done"
+                        ) && (
+                            <>
+                              <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                                {row.plannedCommercialNegotiation
+                                  ? new Date(row.plannedCommercialNegotiation)
+                                      .toLocaleDateString("en-GB")
+                                      .replace(/\//g, "-")
+                                  : ""}
+                              </td>
 
-                            <td className="px-4 py-2 border-b">
-                              <input
-                                type="date"
-                                className="border p-1 rounded"
-                                value={row.actualCommercialNegotiation ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "actualCommercialNegotiation",
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            </td>
+                              <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                                {row.actualCommercialNegotiation
+                                  ? new Date(row.actualCommercialNegotiation)
+                                      .toLocaleDateString("en-GB")
+                                      .replace(/\//g, "-")
+                                  : ""}
+                              </td>
 
-                            <td className="px-4 py-2 border-b">
-                              <select
-                                className="border p-1 rounded"
-                                value={row.finalizeTermsStatus ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "finalizeTermsStatus",
-                                    e.target.value
-                                  )
-                                }
-                              >
-                                <option value="">--Select--</option>
-                                <option value="Hold">Hold</option>
-                                <option value="Cancelled">Cancelled</option>
-                                <option value="Done">Done</option>
-                              </select>
-                            </td>
+                              <td className="px-4 py-2 border-b">
+                                <select
+                                  className="border p-1 rounded"
+                                  value={row.finalizeTermsStatus ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldChange(row._id, "finalizeTermsStatus", e.target.value)
+                                  }
+                                >
+                                  <option value="">--Select--</option>
+                                  <option value="Hold">Hold</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                  <option value="Done">Done</option>
+                                </select>
+                              </td>
 
-                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
-                              {row.timeDelayCommercialNegotiation}
-                            </td>
+                              <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                                {row.timeDelayCommercialNegotiation}
+                              </td>
 
-                            <td className="px-4 py-2 border-b">
-                              <select
-                                className="border p-1 rounded"
-                                value={row.getApproval ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "getApproval",
-                                    e.target.value
-                                  )
-                                }
-                              >
-                                <option value="">--Select--</option>
-                                <option value="Hold">Hold</option>
-                                <option value="Cancelled">Cancelled</option>
-                                <option value="Done">Done</option>
-                              </select>
-                            </td>
+                              <td className="px-4 py-2 border-b">
+                                <select
+                                  className="border p-1 rounded"
+                                  value={row.getApproval ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldChange(row._id, "getApproval", e.target.value)
+                                  }
+                                >
+                                  <option value="">--Select--</option>
+                                  <option value="Hold">Hold</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                  <option value="Done">Done</option>
+                                </select>
+                              </td>
 
-                            <td className="px-4 py-2 border-b">
-                              <select
-                                className="border p-1 rounded"
-                                value={row.approverName2 ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "approverName2",
-                                    e.target.value
-                                  )
-                                }
-                              >
-                                <option value="">--Select--</option>
-                                <option value="Tapan Agarwala">
-                                  Tapan Agarwala
-                                </option>
-                                <option value="Rohit Agarwala">
-                                  Rohit Agarwala
-                                </option>
-                                <option value="Hiru Ghosh">Hiru Ghosh</option>
-                                <option value="Arindam Saha">
-                                  Arindam Saha
-                                </option>
-                              </select>
-                            </td>
+                              <td className="px-4 py-2 border-b">
+                                <select
+                                  className="border p-1 rounded"
+                                  value={row.approverName2 ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldChange(row._id, "approverName2", e.target.value)
+                                  }
+                                >
+                                  <option value="">--Select--</option>
+                                  <option value="Tapan Agarwala">Tapan Agarwala</option>
+                                  <option value="Rohit Agarwala">Rohit Agarwala</option>
+                                  <option value="Hiru Ghosh">Hiru Ghosh</option>
+                                  <option value="Arindam Saha">Arindam Saha</option>
+                                </select>
+                              </td>
 
-                            <td className="px-4 py-2 border-b">
-                              <input
-                                type="text"
-                                className="border p-1 rounded"
-                                value={row.remarksCommercialNegotiation ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "remarksCommercialNegotiation",
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            </td>
-                          </>
+                              <td className="px-4 py-2 border-b">
+                                <input
+                                  type="text"
+                                  className="border p-1 rounded"
+                                  value={row.remarksCommercialNegotiation ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldChange(
+                                      row._id,
+                                      "remarksCommercialNegotiation",
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </td>
+                            </>
                         )}
 
                         {/* LOCAL PURCHASE */}
@@ -2291,56 +2369,51 @@ const handleSubmitUpdates = async () => {
                         )}
 
                         {/* PO GENERATION */}
-                        {selectedOption === "PO Generation" && (
+                        {selectedOption === "PO Generation" && 
+                          row.finalizeTermsStatus === "Done" &&
+                          row.getApproval === "Done" &&
+                          row.dbPoGenerationStatus !== "Done" && (
                           <>
                             <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
-                              {row.plannedPoGeneration}
+                              {row.plannedPoGeneration
+                                ? new Date(row.plannedPoGeneration)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
+                            </td>
+                            
+                            <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
+                              {row.actualPoGeneration
+                                ? new Date(row.actualPoGeneration)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""}
                             </td>
 
-                            <td className="px-4 py-2 border-b">
-                              <input
-                                type="date"
-                                className="border p-1 rounded"
-                                value={row.actualPoGeneration ?? ""}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    row._id,
-                                    "actualPoGeneration",
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            </td>
-
+                            
                             <td className="px-4 py-2 border-b">
                               <select
                                 className="border p-1 rounded"
                                 value={row.poGenerationStatus ?? ""}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  handleFieldChange(
-                                    row._id,
-                                    "poGenerationStatus",
-                                    value
-                                  );
+                                // onChange={(e) => {
+                                //   const value = e.target.value;
+                                //   handleFieldChange(row._id, "poGenerationStatus", value);
 
-                                  if (value === "Done") {
-                                    const today = new Date();
-                                    const formattedDate = `${String(
-                                      today.getDate()
-                                    ).padStart(2, "0")}-${String(
-                                      today.getMonth() + 1
-                                    ).padStart(2, "0")}-${today.getFullYear()}`;
+                                //   if (value === "Done") {
+                                //     const today = new Date();
+                                //     const formattedDate = `${String(today.getDate()).padStart(
+                                //       2,
+                                //       "0"
+                                //     )}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}`;
 
-                                    handleFieldChange(
-                                      row._id,
-                                      "poDate",
-                                      formattedDate
-                                    );
-                                  } else {
-                                    handleFieldChange(row._id, "poDate", "");
-                                  }
-                                }}
+                                //     handleFieldChange(row._id, "poDate", formattedDate);
+                                //   } else {
+                                //     handleFieldChange(row._id, "poDate", "");
+                                //   }
+                                // }}
+                                onChange={(e) =>
+                                  handleFieldChange(row._id, "poGenerationStatus", e.target.value)
+                                }
                               >
                                 <option value="">--Select--</option>
                                 <option value="Hold">Hold</option>
