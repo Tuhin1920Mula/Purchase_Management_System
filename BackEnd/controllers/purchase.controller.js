@@ -1,6 +1,8 @@
 import { uploadToGoogleDrive } from "../config/googleDrive.js";
 import Purchase from "../models/purchase.model.js";
 import LocalPurchase from "../models/localpurchase.model.js";
+import mongoose from "mongoose";
+
 
 /* ------------------ Indian Holidays (YYYY-MM-DD) ------------------ */
 const INDIAN_HOLIDAYS = [
@@ -165,6 +167,8 @@ export const updateLocalPurchase = async (req, res) => {
   }
 };
 
+
+
 // Create
 export const createIndentForm = async (req, res) => {
   try {
@@ -276,6 +280,133 @@ export const getLatestLocalPurchaseUniqueId = async (req, res) => {
 };
 
 
+
+
+export const add_to_localPurchase = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const { indentIds, doerName } = req.body;
+
+    // 1️⃣ Validation
+    if (!Array.isArray(indentIds) || indentIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "indentIds array is required",
+      });
+    }
+
+    if (doerName !== "Local 1") {
+      return res.status(200).json({
+        success: true,
+        message: "Skipped: Not Local Purchase",
+      });
+    }
+
+    session.startTransaction();
+
+    // 2️⃣ Fetch indents
+    const indents = await Purchase.find(
+      { _id: { $in: indentIds } },
+      null,
+      { session }
+    );
+
+    if (indents.length === 0) {
+      await session.abortTransaction();
+      return res.status(404).json({
+        success: false,
+        message: "No valid indents found",
+      });
+    }
+
+    // 3️⃣ Check existing LocalPurchase by _id (avoid exact duplicates)
+    const existing = await LocalPurchase.find(
+      { _id: { $in: indentIds } }, // check by original Purchase _id
+      null,
+      { session }
+    );
+
+    const existingIds = new Set(existing.map(e => e._id.toString()));
+
+    // 4️⃣ Generate starting uniqueId ONCE
+    const lastRecord = await LocalPurchase
+      .findOne({}, { uniqueId: 1 })
+      .sort({ createdAt: -1 })
+      .session(session);
+
+    let nextNumber = lastRecord
+      ? parseInt(lastRecord.uniqueId.split("_")[1], 10) + 1
+      : 12000;
+
+    const bulkInsertData = [];
+    const purchaseIdsToDelete = [];
+
+    for (const indent of indents) {
+      if (existingIds.has(indent._id.toString())) continue; // skip exact duplicates
+
+      bulkInsertData.push({
+        site: indent.site,
+        section: indent.section,
+        uniqueId: `INTLP2_${nextNumber++}`,
+        indentNumber: indent.indentNumber,
+        itemNumber: indent.itemNumber,
+        itemDescription: indent.itemDescription,
+        uom: indent.uom,
+        totalQuantity: indent.totalQuantity,
+        submittedBy: indent.submittedBy,
+      });
+
+      purchaseIdsToDelete.push(indent._id);
+    }
+
+    if (bulkInsertData.length === 0) {
+      await session.abortTransaction();
+      return res.status(200).json({
+        success: true,
+        message: "All records already exist",
+      });
+    }
+
+    // 5️⃣ Bulk insert
+    await LocalPurchase.insertMany(bulkInsertData, {
+      ordered: false,
+      session,
+    });
+
+    // 6️⃣ Delete ONLY inserted Purchase rows
+    await Purchase.deleteMany(
+      { _id: { $in: purchaseIdsToDelete } },
+      { session }
+    );
+
+    await session.commitTransaction();
+
+    return res.status(201).json({
+      success: true,
+      message: "Bulk Local Purchase completed",
+      summary: {
+        requested: indentIds.length,
+        inserted: bulkInsertData.length,
+        deletedFromPurchase: purchaseIdsToDelete.length,
+        skipped: indentIds.length - bulkInsertData.length,
+      },
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("❌ BULK LocalPurchase Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+
 // ==========================
 // Update Purchase Status Fields (Custom Route)
 // ==========================
@@ -338,10 +469,23 @@ export const getAllIndentForms = async (req, res) => {
   }
 };
 
+export const showAllIndentForms = async (req, res) => {
+  try {
+    const forms = await Purchase.find().sort({ createdAt: 1 });
+    return res.json({ success: true, data: forms });
+  } catch (error) {
+    console.error("❌ Error Fetching Forms:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
+
+
 export const getAllLocalPurchaseForms = async (req, res) => {
   try {
     const { role, username } = req.body;
-
     let filter = {};
 
     if (role === "PSE") {

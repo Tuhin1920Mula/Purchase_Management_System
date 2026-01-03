@@ -22,7 +22,15 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { getAllIndentForms, getAllLocalPurchaseForms, updatePurchaseRow, updateLocalPurchaseRow } from "../../api/IndentForm.api";
+import {
+  getAllIndentForms,
+  getAllLocalPurchaseForms,
+  updatePurchaseRow,
+  updateLocalPurchaseRow,
+} from "../../api/IndentForm.api";
+
+import "./GetQuotations.css";
+
 
 // ---------------------- ROLE FIRST ----------------------
 const getNavLinksByRole = (role) => {
@@ -115,8 +123,10 @@ export default function PurchasePage() {
   const [endDate, setEndDate] = useState("");
 
   //const pcIndex = pcFollowUp?.replace("PC", ""); // "1" | "2" | "3"
-  const pcIndex = selectedOption === "PC Follow Up" ? pcFollowUp.replace("PC", ""): null;
-  const paymentKey = selectedOption === "Payment Follow Up" ? paymentFollowUp : null;
+  const pcIndex =
+    selectedOption === "PC Follow Up" ? pcFollowUp.replace("PC", "") : null;
+  const paymentKey =
+    selectedOption === "Payment Follow Up" ? paymentFollowUp : null;
 
   // keep ref in-sync whenever state changes
   useEffect(() => {
@@ -124,11 +134,11 @@ export default function PurchasePage() {
   }, [tableData]);
 
   useEffect(() => {
-  if (pcFollowUp) {
-    // fetchData({ pcFollowUp });
-    console.log("Selected PC Follow Up:", pcFollowUp);
-  }
-}, [pcFollowUp]);
+    if (pcFollowUp) {
+      // fetchData({ pcFollowUp });
+      console.log("Selected PC Follow Up:", pcFollowUp);
+    }
+  }, [pcFollowUp]);
 
   // useEffect(() => {
   //   fetchIndentForms();
@@ -137,11 +147,11 @@ export default function PurchasePage() {
     fetchIndentForms();
   }, [selectedOption, findBy, selectedSite, date, startDate, endDate]);
 
-
   useEffect(() => {
     fetchIndentForms();
     const link = document.createElement("link");
-    link.href = "https://fonts.googleapis.com/css2?family=Agu+Display&display=swap";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Agu+Display&display=swap";
     link.rel = "stylesheet";
     document.head.appendChild(link);
     // cleanup not required for this example
@@ -172,6 +182,15 @@ export default function PurchasePage() {
   //   console.log("Updated Field:", { id, field, value });
   // };
   const handleFieldChange = (id, field, value) => {
+    setTableData((prev) =>
+      prev.map((r) => (r._id === id ? { ...r, [field]: value } : r))
+    );
+
+    // Track changed rows
+    setChangedRows((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
   const today = new Date().toISOString().split("T")[0];
 
   const isGetQuotationDone = field === "doerStatus" && value === "Done";
@@ -245,59 +264,59 @@ export default function PurchasePage() {
 };
 
   const toInputDateFormat = (dateStr) => {
-  if (!dateStr) return "";
-  const [dd, mm, yyyy] = dateStr.split("-");
-  return `${yyyy}-${mm}-${dd}`;
-};
+    if (!dateStr) return "";
+    const [dd, mm, yyyy] = dateStr.split("-");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
-//   const fetchIndentForms = async () => {
-//   try {
-//     const role = localStorage.getItem("role");
-//     const username = localStorage.getItem("username");
+  //   const fetchIndentForms = async () => {
+  //   try {
+  //     const role = localStorage.getItem("role");
+  //     const username = localStorage.getItem("username");
 
-//     const response = await getAllIndentForms({ role, username });
+  //     const response = await getAllIndentForms({ role, username });
 
-//     if (response && response.success && response.data) {
-//       let filteredData = response.data;
+  //     if (response && response.success && response.data) {
+  //       let filteredData = response.data;
 
-//       // -------- FILTER BY SITE --------
-//       if (findBy === "Site" && selectedSite) {
-//         filteredData = filteredData.filter(item =>
-//           item.site?.toLowerCase() === selectedSite.toLowerCase()
-//         );
-//       }
+  //       // -------- FILTER BY SITE --------
+  //       if (findBy === "Site" && selectedSite) {
+  //         filteredData = filteredData.filter(item =>
+  //           item.site?.toLowerCase() === selectedSite.toLowerCase()
+  //         );
+  //       }
 
-//       // -------- FILTER BY DATE --------
-//       if (findBy === "Date" && date) {
-//         filteredData = filteredData.filter(item => {
-//           return item.date === date;
-//         });
-//       }
+  //       // -------- FILTER BY DATE --------
+  //       if (findBy === "Date" && date) {
+  //         filteredData = filteredData.filter(item => {
+  //           return item.date === date;
+  //         });
+  //       }
 
-//       // -------- FILTER BY DATE RANGE --------
-//       if (findBy === "DateRange" && startDate && endDate) {
-//         filteredData = filteredData.filter(item => {
-//           console.log(
-//             "🔍 Range Check → Start:", startDate,
-//             "| End:", endDate,
-//             "| Item:", item.date
-//           );
+  //       // -------- FILTER BY DATE RANGE --------
+  //       if (findBy === "DateRange" && startDate && endDate) {
+  //         filteredData = filteredData.filter(item => {
+  //           console.log(
+  //             "🔍 Range Check → Start:", startDate,
+  //             "| End:", endDate,
+  //             "| Item:", item.date
+  //           );
 
-//           return item.date >= startDate && item.date <= endDate;
-//         });
-//       }
+  //           return item.date >= startDate && item.date <= endDate;
+  //         });
+  //       }
 
-//       console.log("📥 Filtered Data fetched:", filteredData);
+  //       console.log("📥 Filtered Data fetched:", filteredData);
 
-//       setTableData(filteredData);
-//       latestDataRef.current = filteredData;
-//     } else {
-//       console.warn("⚠️ Unexpected response:", response);
-//     }
-//   } catch (error) {
-//     console.error("❌ Error fetching Purchase data:", error);
-//   }
-// };
+  //       setTableData(filteredData);
+  //       latestDataRef.current = filteredData;
+  //     } else {
+  //       console.warn("⚠️ Unexpected response:", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Error fetching Purchase data:", error);
+  //   }
+  // };
 
   const fetchIndentForms = async () => {
     try {
@@ -318,20 +337,20 @@ export default function PurchasePage() {
 
         // -------- FILTER BY SITE --------
         if (findBy === "Site" && selectedSite) {
-          filteredData = filteredData.filter(item =>
-            item.site?.toLowerCase() === selectedSite.toLowerCase()
+          filteredData = filteredData.filter(
+            (item) => item.site?.toLowerCase() === selectedSite.toLowerCase()
           );
         }
 
         // -------- FILTER BY DATE --------
         if (findBy === "Date" && date) {
-          filteredData = filteredData.filter(item => item.date === date);
+          filteredData = filteredData.filter((item) => item.date === date);
         }
 
         // -------- FILTER BY DATE RANGE --------
         if (findBy === "DateRange" && startDate && endDate) {
           filteredData = filteredData.filter(
-            item => item.date >= startDate && item.date <= endDate
+            (item) => item.date >= startDate && item.date <= endDate
           );
         }
 
@@ -359,7 +378,6 @@ export default function PurchasePage() {
       console.error("❌ Error fetching Purchase data:", error);
     }
   };
-
 
   // Submit uses latestDataRef.current (always freshest snapshot) to build payloads
   // const handleSubmitUpdates = async () => {
@@ -396,44 +414,86 @@ export default function PurchasePage() {
   //   }
   // };
 
-  const handleSubmitUpdates = async () => {
-    if (saving) return;
+// src/api/LocalPurchase.api.js
 
-    if (Object.keys(changedRows).length === 0) {
-      alert("No changes to save.");
-      return;
-    }
+const addToLocalPurchase = async (payload) => {
+  // ✅ NEW validation
+  if (!Array.isArray(payload.indentIds) || payload.indentIds.length === 0) {
+    throw new Error("indentIds array is required");
+  }
 
-    setSaving(true);
+  const res = await fetch("http://localhost:5000/indent/add-to-localPurchase", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
-    try {
-      console.log("📤 Sending Changed Rows:", changedRows);
+  const data = await res.json();
 
-      for (const [id, changes] of Object.entries(changedRows)) {
-        // ✅ CONDITIONAL UPDATE
-        if (selectedOption === "Local Purchase") {
-          await updateLocalPurchaseRow(id, changes);
-          console.log("🟢 Local Purchase Updated:", id, changes);
-        } else {
-          await updatePurchaseRow(id, changes);
-          console.log("🔵 Purchase Updated:", id, changes);
-        }
+  if (!res.ok) {
+    throw new Error(data.message || "Failed");
+  }
+
+  return data;
+};
+
+
+
+const handleSubmitUpdates = async () => {
+  if (saving) return;
+
+  if (Object.keys(changedRows).length === 0) {
+    alert("No changes to save.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    console.log("📤 Sending Changed Rows:", changedRows);
+
+    const localPurchaseIds = [];
+
+    // 1️⃣ Update Purchase rows
+    for (const [id, changes] of Object.entries(changedRows)) {
+
+      await updatePurchaseRow(id, changes);
+      console.log("🔵 Purchase Updated:", id);
+
+      if (changes.doerName === "Local 1") {
+        localPurchaseIds.push(id);
       }
-
-      alert("✅ Updates Saved Successfully!");
-
-      // Refresh data from backend
-      await fetchIndentForms();
-
-      // Reset changed rows
-      setChangedRows({});
-    } catch (err) {
-      console.error("❌ Save Error:", err);
-      alert("Error saving changes.");
-    } finally {
-      setSaving(false);
     }
-  };
+
+    console.log("🧾 Local Purchase IDs:", localPurchaseIds);
+
+    // 2️⃣ BULK CALL (ONLY ONCE)
+    if (localPurchaseIds.length > 0) {
+      const response = await addToLocalPurchase({
+        indentIds: localPurchaseIds,   // ✅ ARRAY
+        doerName: "Local 1",            // ✅ REQUIRED
+      });
+
+      console.log("🚀 Bulk Local Purchase Response:", response);
+    }
+
+    alert("✅ Updates Saved Successfully!");
+    await fetchIndentForms();
+    setChangedRows({});
+
+  } catch (err) {
+    console.error("❌ Save Error:", err);
+    alert(err.message);
+  } finally {
+    setSaving(false);
+  }
+};
+
+
+
+
+
+
 
   // const handlePdfUpload = async (rowId, file) => {
   //   if (!file) return;
@@ -473,7 +533,10 @@ export default function PurchasePage() {
   //   }
   // };
 
-  const isDefaultEditable = selectedOption === "Indent Verification" || selectedOption === "Local Purchase" || selectedOption === "PMS Master Sheet";
+  const isDefaultEditable =
+    selectedOption === "Indent Verification" ||
+    selectedOption === "Local Purchase" ||
+    selectedOption === "PMS Master Sheet";
 
   return (
     <div className="min-h-screen bg-gray-100 font-poppins">
@@ -499,7 +562,7 @@ export default function PurchasePage() {
 
       <nav className="w-full py-6 px-10 flex justify-between items-center bg-transparent mt-4">
         {/* Left Section */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 purchase-logo">
           <FaShoppingCart className="text-red-600 text-5xl" />
           <h1
             className="text-4xl font-bold tracking-wide text-gray-900"
@@ -513,7 +576,6 @@ export default function PurchasePage() {
         <div className="relative group">
           {/* Profile Button */}
           <div className="flex items-center gap-3 cursor-pointer select-none">
-            
             {/* Flower-style Avatar */}
             <div className="relative w-11 h-11 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-red-500 opacity-80 blur-[1px]"></div>
@@ -540,7 +602,6 @@ export default function PurchasePage() {
 
           {/* Hover Chat Box */}
           <div className="absolute right-0 mt-3 w-44 bg-white rounded-xl shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-            
             {/* Triangle Pointer */}
             <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
 
@@ -560,7 +621,7 @@ export default function PurchasePage() {
       </nav>
 
       {/* ------------------ SIDEBAR ------------------ */}
-      <aside className="w-64 bg-transparent text-black p-6 float-left h-screen flex flex-col">
+      <aside className="w-64 bg-transparent text-black p-6 float-left h-screen flex flex-col nav-sections">
         {/* NAV LINKS */}
         <div className="flex-1 overflow-y-auto">
           {Object.entries(navLinks).map(([section, links]) => (
@@ -583,7 +644,7 @@ export default function PurchasePage() {
                           }
                         }}
                         className={`
-                          flex items-center gap-3 p-3 rounded-xl cursor-pointer transition shadow-sm
+                          flex items-center gap-5 p-4 rounded-xl cursor-pointer transition shadow-sm
                           bg-gray-100 hover:bg-red-100
                           ${
                             isSelected
@@ -605,7 +666,7 @@ export default function PurchasePage() {
           ))}
           {/* ADD USER BUTTON – ONLY FOR ADMIN */}
           {role === "ADMIN" && (
-            <div className="mt-40">
+            <div className="mt-20">
               <button
                 onClick={() => navigate("/add-user")}
                 className="
@@ -631,58 +692,58 @@ export default function PurchasePage() {
           transition={{ duration: 0.5 }}
           className="bg-white rounded-3xl shadow-md p-8"
         >
-          
           {/* ---------- FILTER BAR (LEFT + RIGHT SAME ROW) ---------- */}
           <div className="flex justify-between items-center mb-3">
-
             {/* -------- LEFT : PC FOLLOW UP BUTTONS -------- */}
             <div className="flex gap-2">
-            {selectedOption === "PC Follow Up" && (
-              <>
-                {["PC1", "PC2", "PC3"].map((pc, index) => (
-                  <button
-                    key={pc}
-                    onClick={() => setPcFollowUp(pc)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition
+              {selectedOption === "PC Follow Up" && (
+                <>
+                  {["PC1", "PC2", "PC3"].map((pc, index) => (
+                    <button
+                      key={pc}
+                      onClick={() => setPcFollowUp(pc)}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition
                       ${
                         pcFollowUp === pc
                           ? "bg-red-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-red-100"
                       }`}
-                  >
-                    PC-Follow UP {index + 1}
-                  </button>
-                ))}
-              </>
-            )}
+                    >
+                      PC-Follow UP {index + 1}
+                    </button>
+                  ))}
+                </>
+              )}
 
-            {selectedOption === "Payment Follow Up" && (
-              <>
-                {[
-                  { key: "PWP", label: "Payment Along with PO" },
-                  { key: "BBD", label: "Balance Before Dispatch" },
-                  { key: "FAR", label: "After Receive Material / FAR" },
-                  { key: "PAPW", label: "Payment After Performance Warranty / PAPW" },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => setPaymentFollowUp(item.key)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition
+              {selectedOption === "Payment Follow Up" && (
+                <>
+                  {[
+                    { key: "PWP", label: "Payment Along with PO" },
+                    { key: "BBD", label: "Balance Before Dispatch" },
+                    { key: "FAR", label: "After Receive Material / FAR" },
+                    {
+                      key: "PAPW",
+                      label: "Payment After Performance Warranty / PAPW",
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      onClick={() => setPaymentFollowUp(item.key)}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition
                       ${
                         paymentFollowUp === item.key
                           ? "bg-red-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-red-100"
                       }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-          {/* -------- RIGHT : FIND BY FILTERS -------- */}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+            {/* -------- RIGHT : FIND BY FILTERS -------- */}
             <div className="flex items-center gap-3">
-
               {/* Icon + Label with background */}
               <div className="flex items-center gap-2 bg-red-100 px-3 py-2 rounded-lg shadow-sm">
                 <FaSearch className="text-red-700 text-xl font-bold" />
@@ -750,37 +811,41 @@ export default function PurchasePage() {
                   />
                 </div>
               )}
-
             </div>
           </div>
-          
+
           <div className="mb-8 p-4 bg-red-600 rounded-xl shadow-md text-center">
             <h1 className="text-3xl font-bold text-white">Purchase</h1>
           </div>
 
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-max border border-gray-200 rounded-xl whitespace-nowrap text-xs">
+          <div className="w-full overflow-x-auto max-h-[400px] overflow-y-auto">
 
+            <table className="min-w-max border border-gray-200 rounded-xl whitespace-nowrap text-xs">
               <thead className="bg-gray-200 text-left rounded-t-xl">
                 <tr>
-
                   {/* ------------------------- COMPARISON STATEMENT ------------------------- */}
                   {selectedOption === "Comparison Statement" ? (
-                      <>
-                        <th className="px-4 py-3 border-b">Date</th>
-                        <th className="px-4 py-3 border-b">Unique ID</th>
-                        <th className="px-4 py-3 border-b text-red-700">Upload PDF</th>
+                    <>
+                      <th className="px-4 py-3 border-b">Date</th>
+                      <th className="px-4 py-3 border-b">Unique ID</th>
+                      <th className="px-4 py-3 border-b text-red-700">
+                        Upload PDF
+                      </th>
 
-                        {/* Add conditional header based on role */}
-                        {role === "PA" && (
-                          <th className="px-4 py-3 border-b text-red-700">Upload Status</th>
-                        )}
+                      {/* Add conditional header based on role */}
+                      {role === "PA" && (
+                        <th className="px-4 py-3 border-b text-red-700">
+                          Upload Status
+                        </th>
+                      )}
 
-                        {role === "PSE" && (
-                          <th className="px-4 py-3 border-b text-red-700">Review Status</th>
-                        )}
-                      </>
-                    ) : (
+                      {role === "PSE" && (
+                        <th className="px-4 py-3 border-b text-red-700">
+                          Review Status
+                        </th>
+                      )}
+                    </>
+                  ) : (
                     <>
                       {/* ------------------------- DEFAULT COLUMNS ------------------------- */}
                       <th className="px-4 py-3 border-b">Date</th>
@@ -793,117 +858,262 @@ export default function PurchasePage() {
                       <th className="px-4 py-3 border-b">Total Quantity</th>
                       <th className="px-4 py-3 border-b">Submitted By</th>
                       <th className="px-4 py-3 border-b">Section</th>
-                      <th className="px-4 py-3 border-b text-red-700">Doer Name</th>
+                      <th className="px-4 py-3 border-b text-red-700">
+                        Doer Name
+                      </th>
 
                       {/* ------------------------- CONDITIONAL HEADERS ------------------------- */}
                       {selectedOption === "PMS Master Sheet" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Send for Get Quotation</th>
-                          <th className="px-4 py-3 border-b text-red-700">Doer Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Technical Approval Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Finalize Terms Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Get Approval</th>
-                          <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Generation Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Number</th>
-                          <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
-                          <th className="px-4 py-3 border-b text-red-700">Amount</th>
-                          <th className="px-4 py-3 border-b text-red-700">Payment Condition</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Send for Get Quotation
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Doer Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Technical Approval Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Approver Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Finalize Terms Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Get Approval
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Approver Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Generation Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Number
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Vendor Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Lead Days
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Amount
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Payment Condition
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
-                      
+
                       {selectedOption === "Indent Verification" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
-                      
+
                       {selectedOption === "Get Quotation" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Send for Get Quotation</th>
-                          <th className="px-4 py-3 border-b text-red-700">Doer Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Send for Get Quotation
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Doer Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
 
                       {selectedOption === "Technical Approval" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Technical Approval Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Technical Approval Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Approver Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
 
                       {selectedOption === "Commercial Negotiation" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Finalize Terms Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Get Approval</th>
-                          <th className="px-4 py-3 border-b text-red-700">Approver Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Finalize Terms Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Get Approval
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Approver Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
 
                       {selectedOption === "PO Generation" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Generation Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Number</th>
-                          <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
-                          <th className="px-4 py-3 border-b text-red-700">Amount</th>
-                          <th className="px-4 py-3 border-b text-red-700">Payment Condition</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Generation Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Number
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Vendor Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Lead Days
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Amount
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Payment Condition
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
 
                       {selectedOption === "Local Purchase" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">PO Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Amount</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Vendor Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Amount
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
 
-                      {(selectedOption === "PC Follow Up" || selectedOption === "Payment Follow Up") && (
+                      {(selectedOption === "PC Follow Up" ||
+                        selectedOption === "Payment Follow Up") && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">PO Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">PO Number</th>
-                          <th className="px-4 py-3 border-b text-red-700">Vendor Name</th>
-                          <th className="px-4 py-3 border-b text-red-700">Lead Days</th>
-                          <th className="px-4 py-3 border-b text-red-700">Payment Condition</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            PO Number
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Vendor Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Lead Days
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Payment Condition
+                          </th>
 
                           {/* Extra column only for Payment Follow Up */}
                           {selectedOption === "Payment Follow Up" && (
@@ -912,22 +1122,33 @@ export default function PurchasePage() {
                             </th>
                           )}
 
-                          <th className="px-4 py-3 border-b text-red-700">Planned Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Actual Date</th>
-                          <th className="px-4 py-3 border-b text-red-700">Follow Up Status</th>
-                          <th className="px-4 py-3 border-b text-red-700">Time Delay</th>
-                          <th className="px-4 py-3 border-b text-red-700">Remarks</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Planned Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Actual Date
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Follow Up Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Time Delay
+                          </th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            Remarks
+                          </th>
                         </>
                       )}
-                      
+
                       {selectedOption === "Material Received" && (
                         <>
-                          <th className="px-4 py-3 border-b text-red-700">GRN to Store</th>
+                          <th className="px-4 py-3 border-b text-red-700">
+                            GRN to Store
+                          </th>
                         </>
                       )}
                     </>
                   )}
-
                 </tr>
               </thead>
 
@@ -959,7 +1180,8 @@ export default function PurchasePage() {
                         <td className="px-4 py-1 border-b flex items-center gap-3">
                           {(() => {
                             const isPA = localStorage.getItem("role") === "PA";
-                            const isDone = row.comparisonStatementStatus === "Done";
+                            const isDone =
+                              row.comparisonStatementStatus === "Done";
                             const isReadOnly = isPA && isDone;
 
                             return (
@@ -977,7 +1199,8 @@ export default function PurchasePage() {
                                     const file = e.target.files[0];
                                     if (!file) return;
 
-                                    const previewUrl = URL.createObjectURL(file);
+                                    const previewUrl =
+                                      URL.createObjectURL(file);
 
                                     setPdfPreview((prev) => ({
                                       ...prev,
@@ -999,7 +1222,9 @@ export default function PurchasePage() {
                                   disabled={isReadOnly}
                                   onClick={() =>
                                     !isReadOnly &&
-                                    document.getElementById(`pdfInput_${row._id}`).click()
+                                    document
+                                      .getElementById(`pdfInput_${row._id}`)
+                                      .click()
                                   }
                                   className={`flex items-center gap-2 px-3 py-0.5 rounded transition
                                     ${
@@ -1014,9 +1239,14 @@ export default function PurchasePage() {
                                 {/* Uploaded Filename Button */}
                                 {uploadedFiles[row._id] && (
                                   <button
-                                    onClick={() => window.open(pdfPreview[row._id], "_blank")}
+                                    onClick={() =>
+                                      window.open(pdfPreview[row._id], "_blank")
+                                    }
                                     className="px-3 py-0 rounded font-medium transition"
-                                    style={{ backgroundColor: "#F5D038", color: "#000" }}
+                                    style={{
+                                      backgroundColor: "#F5D038",
+                                      color: "#000",
+                                    }}
                                   >
                                     {uploadedFiles[row._id]}
                                   </button>
@@ -1025,9 +1255,14 @@ export default function PurchasePage() {
                                 {/* Already Uploaded PDF (DB / Google Drive) */}
                                 {row.comparisonPdf && (
                                   <button
-                                    onClick={() => window.open(row.comparisonPdf, "_blank")}
+                                    onClick={() =>
+                                      window.open(row.comparisonPdf, "_blank")
+                                    }
                                     className="px-3 py-1 rounded font-medium transition"
-                                    style={{ backgroundColor: "#F5D038", color: "#000" }}
+                                    style={{
+                                      backgroundColor: "#F5D038",
+                                      color: "#000",
+                                    }}
                                   >
                                     View Uploaded PDF
                                   </button>
@@ -1066,9 +1301,10 @@ export default function PurchasePage() {
                       /* ------------- ALL OTHER SECTIONS (DEFAULT TABLE) ------------- */
                       <tr
                         key={row._id || index}
-                        className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-red-50 transition`}
+                        className={`${
+                          index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                        } hover:bg-red-50 transition`}
                       >
-
                         {/* DATE */}
                         <td className="px-4 py-2 border-b">
                           {isDefaultEditable ? (
@@ -1076,10 +1312,20 @@ export default function PurchasePage() {
                               type="date"
                               className="border p-1 rounded w-full"
                               value={row.date ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "date", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "date",
+                                  e.target.value
+                                )
+                              }
                             />
+                          ) : row.date ? (
+                            new Date(row.date)
+                              .toLocaleDateString("en-GB")
+                              .replace(/\//g, "-")
                           ) : (
-                            row.date ? new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-") : ""
+                            ""
                           )}
                         </td>
 
@@ -1089,7 +1335,13 @@ export default function PurchasePage() {
                             <select
                               className="border p-1 rounded w-full"
                               value={row.site ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "site", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "site",
+                                  e.target.value
+                                )
+                              }
                             >
                               <option value="">Select Site</option>
                               <option value="HIPL">HIPL</option>
@@ -1115,7 +1367,13 @@ export default function PurchasePage() {
                               type="text"
                               className="border p-1 rounded w-full"
                               value={row.indentNumber ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "indentNumber", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "indentNumber",
+                                  e.target.value
+                                )
+                              }
                             />
                           ) : (
                             row.indentNumber
@@ -1129,7 +1387,13 @@ export default function PurchasePage() {
                               type="text"
                               className="border p-1 rounded w-full"
                               value={row.itemNumber ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "itemNumber", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "itemNumber",
+                                  e.target.value
+                                )
+                              }
                             />
                           ) : (
                             row.itemNumber
@@ -1144,7 +1408,11 @@ export default function PurchasePage() {
                               className="border p-1 rounded w-full"
                               value={row.itemDescription ?? ""}
                               onChange={(e) =>
-                                handleFieldChange(row._id, "itemDescription", e.target.value)
+                                handleFieldChange(
+                                  row._id,
+                                  "itemDescription",
+                                  e.target.value
+                                )
                               }
                             />
                           ) : (
@@ -1159,7 +1427,13 @@ export default function PurchasePage() {
                               type="text"
                               className="border p-1 rounded w-full"
                               value={row.uom ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "uom", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "uom",
+                                  e.target.value
+                                )
+                              }
                             />
                           ) : (
                             row.uom
@@ -1173,7 +1447,13 @@ export default function PurchasePage() {
                               type="number"
                               className="border p-1 rounded w-full"
                               value={row.totalQuantity ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "totalQuantity", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "totalQuantity",
+                                  e.target.value
+                                )
+                              }
                             />
                           ) : (
                             row.totalQuantity
@@ -1182,8 +1462,48 @@ export default function PurchasePage() {
 
                         {/* SUBMITTED BY (ALWAYS READ ONLY) */}
                         <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
-                          {row.submittedBy}
+                          {/* {row.submittedBy} */}
+                          {isDefaultEditable ? (
+                            <select
+                              className="border p-1 rounded w-full"
+                              value={row.submittedBy ?? ""}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "submittedBy",
+                                  e.target.value
+                                )
+                              }
+                            >
+                              <option value="">Select Site</option>
+                              <option value="User">Admin</option>
+                              <option value="Arpita Ghosh">Arpita Ghosh</option>
+                              <option value="Praloy Ghosh">Praloy Ghosh</option>
+                              <option value="Amit Ray">Amit Ray</option>
+                            </select>
+                          ) : (
+                            row.submittedBy
+                          )}
                         </td>
+
+                        {/* {<td className="px-4 py-2 border-b">
+                          {isDefaultEditable ? (
+                            <select
+                              className="border p-1 rounded w-full"
+                              value={row.site ?? ""}
+                              onChange={(e) => handleFieldChange(row._id, "site", e.target.value)}
+                            >
+                              <option value="">Select Site</option>
+                              <option value="HIPL">HIPL</option>
+                              <option value="RSIPL">RSIPL</option>
+                              <option value="HRM">HRM</option>
+                              <option value="SUNAGROW">SUNAGROW</option>
+                              <option value="RICE FIELD">RICE FIELD</option>
+                            </select>
+                          ) : (
+                            row.site
+                          )}
+                        </td>} */}
 
                         {/* SECTION */}
                         <td className="px-4 py-2 border-b">
@@ -1191,19 +1511,31 @@ export default function PurchasePage() {
                             <select
                               className="border p-1 rounded w-full"
                               value={row.section ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "section", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "section",
+                                  e.target.value
+                                )
+                              }
                             >
                               <option value="">Select Section</option>
                               <option value="REFINERY">REFINERY</option>
-                              <option value="CENTRAL STORE">CENTRAL STORE</option>
+                              <option value="CENTRAL STORE">
+                                CENTRAL STORE
+                              </option>
                               <option value="MEGA STORE">MEGA STORE</option>
                               <option value="OILS STORE">OILS STORE</option>
                               <option value="PP STORE">PP STORE</option>
                               <option value="RSIPL">RSIPL</option>
                               <option value="HRM">HRM</option>
                               <option value="OILS LAB">OILS LAB</option>
-                              <option value="RSIPL-PROJECT-R">RSIPL-PROJECT-R</option>
-                              <option value="RSIPL-PROJECT-S">RSIPL-PROJECT-S</option>
+                              <option value="RSIPL-PROJECT-R">
+                                RSIPL-PROJECT-R
+                              </option>
+                              <option value="RSIPL-PROJECT-S">
+                                RSIPL-PROJECT-S
+                              </option>
                             </select>
                           ) : (
                             row.section
@@ -1216,13 +1548,20 @@ export default function PurchasePage() {
                             <select
                               className="border p-1 rounded w-full"
                               value={row.doerName ?? ""}
-                              onChange={(e) => handleFieldChange(row._id, "doerName", e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  row._id,
+                                  "doerName",
+                                  e.target.value
+                                )
+                              }
                             >
                               <option value="">Select Doer Name</option>
                               <option value="Executive 1">Executive 1</option>
                               <option value="Executive 2">Executive 2</option>
                               <option value="Executive 3">Executive 3</option>
                               <option value="Executive 4">Executive 4</option>
+                              <option value="Local 1">Local Purchase</option>
                             </select>
                           ) : (
                             row.doerName
@@ -1230,7 +1569,7 @@ export default function PurchasePage() {
                         </td>
 
                         {/* ------------ OTHER CONDITION BLOCKS REMAIN SAME ------------ */}
-                        
+
                         {/* PMS Master Sheet */}
                         {selectedOption === "PMS Master Sheet" && (
                           <>
@@ -1240,7 +1579,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksIndentVerification ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksIndentVerification", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksIndentVerification",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1252,26 +1595,38 @@ export default function PurchasePage() {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <input
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.actualGetQuotation ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "actualGetQuotation", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "actualGetQuotation",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <select
                                 className="border p-1 rounded"
                                 value={row.quotationStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "quotationStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "quotationStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
-                                <option value="Inquiry Send">Inquiry Send</option>
+                                <option value="Inquiry Send">
+                                  Inquiry Send
+                                </option>
                                 <option value="Hold">Hold</option>
                               </select>
                             </td>
@@ -1281,7 +1636,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.doerStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "doerStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "doerStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
@@ -1299,7 +1658,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksGetQuotation ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksGetQuotation", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksGetQuotation",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1311,22 +1674,32 @@ export default function PurchasePage() {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <input
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.actualTechApproval ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "actualTechApproval", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "actualTechApproval",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <select
                                 className="border p-1 rounded"
                                 value={row.technicalApprovalStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "technicalApprovalStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "technicalApprovalStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
@@ -1347,7 +1720,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.approverName ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "approverName", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "approverName",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1358,7 +1735,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksTechApproval ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksTechApproval", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksTechApproval",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1370,22 +1751,32 @@ export default function PurchasePage() {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <input
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.actualCommercialNegotiation ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "actualCommercialNegotiation", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "actualCommercialNegotiation",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <select
                                 className="border p-1 rounded"
                                 value={row.finalizeTermsStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "finalizeTermsStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "finalizeTermsStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
@@ -1404,7 +1795,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.getApproval ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "getApproval", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "getApproval",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
@@ -1419,14 +1814,24 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.approverName2 ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "approverName2", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "approverName2",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
-                                <option value="Tapan Agarwala">Tapan Agarwala</option>
-                                <option value="Rohit Agarwala">Rohit Agarwala</option>
+                                <option value="Tapan Agarwala">
+                                  Tapan Agarwala
+                                </option>
+                                <option value="Rohit Agarwala">
+                                  Rohit Agarwala
+                                </option>
                                 <option value="Hiru Ghosh">Hiru Ghosh</option>
-                                <option value="Arindam Saha">Arindam Saha</option>
+                                <option value="Arindam Saha">
+                                  Arindam Saha
+                                </option>
                               </select>
                             </td>
 
@@ -1436,7 +1841,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksCommercialNegotiation ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksCommercialNegotiation", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksCommercialNegotiation",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1448,32 +1857,47 @@ export default function PurchasePage() {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <input
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.actualPoGeneration ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "actualPoGeneration", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "actualPoGeneration",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <select
                                 className="border p-1 rounded"
                                 value={row.poGenerationStatus ?? ""}
                                 onChange={(e) => {
                                   const value = e.target.value;
-                                  handleFieldChange(row._id, "poGenerationStatus", value);
+                                  handleFieldChange(
+                                    row._id,
+                                    "poGenerationStatus",
+                                    value
+                                  );
 
                                   if (value === "Done") {
                                     const today = new Date();
-                                    const formattedDate = `${String(today.getDate()).padStart(
-                                      2,
-                                      "0"
-                                    )}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}`;
+                                    const formattedDate = `${String(
+                                      today.getDate()
+                                    ).padStart(2, "0")}-${String(
+                                      today.getMonth() + 1
+                                    ).padStart(2, "0")}-${today.getFullYear()}`;
 
-                                    handleFieldChange(row._id, "poDate", formattedDate);
+                                    handleFieldChange(
+                                      row._id,
+                                      "poDate",
+                                      formattedDate
+                                    );
                                   } else {
                                     handleFieldChange(row._id, "poDate", "");
                                   }
@@ -1495,7 +1919,13 @@ export default function PurchasePage() {
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.poDate ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "poDate", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "poDate",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
 
@@ -1505,7 +1935,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.poNumber ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "poNumber", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "poNumber",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1516,7 +1950,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.vendorName ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "vendorName", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "vendorName",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1527,7 +1965,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.leadDays ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "leadDays", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "leadDays",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1538,7 +1980,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.amount ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "amount", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "amount",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1548,15 +1994,25 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.paymentCondition ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "paymentCondition", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "paymentCondition",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
-                                <option value="After Received">After Received</option>
-                                <option value="Before Dispatch">Before Dispatch</option>
+                                <option value="After Received">
+                                  After Received
+                                </option>
+                                <option value="Before Dispatch">
+                                  Before Dispatch
+                                </option>
                                 <option value="PWP BBD">PWP BBD</option>
                                 <option value="PWP BBD FAR">PWP BBD FAR</option>
-                                <option value="PWP BBD PAPW">PWP BBD PAPW</option>
+                                <option value="PWP BBD PAPW">
+                                  PWP BBD PAPW
+                                </option>
                               </select>
                             </td>
 
@@ -1566,13 +2022,17 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksPoGeneration ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksPoGeneration", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksPoGeneration",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
                           </>
                         )}
-                        
+
                         {/* Indent Verification */}
                         {selectedOption === "Indent Verification" && 
                           row.dbDoerName === "" && (
@@ -1583,13 +2043,17 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksIndentVerification ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksIndentVerification", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksIndentVerification",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
                           </>
                         )}
-                        
+
                         {/* GET QUOTATION */}
                         {selectedOption === "Get Quotation" &&
                           row.doerName !== "" &&
@@ -1619,11 +2083,17 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.quotationStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "quotationStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "quotationStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
-                                <option value="Inquiry Send">Inquiry Send</option>
+                                <option value="Inquiry Send">
+                                  Inquiry Send
+                                </option>
                                 <option value="Hold">Hold</option>
                               </select>
                             </td>
@@ -1633,7 +2103,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.doerStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "doerStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "doerStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
@@ -1653,7 +2127,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksGetQuotation ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksGetQuotation", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksGetQuotation",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1677,13 +2155,17 @@ export default function PurchasePage() {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-                            
+
                             <td className="px-4 py-2 border-b">
                               <select
                                 className="border p-1 rounded"
                                 value={row.technicalApprovalStatus ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "technicalApprovalStatus", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "technicalApprovalStatus",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
@@ -1704,7 +2186,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.approverName ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "approverName", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "approverName",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1715,7 +2201,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksTechApproval ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksTechApproval", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksTechApproval",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1821,7 +2311,13 @@ export default function PurchasePage() {
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.poDate ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "poDate", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "poDate",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
 
@@ -1831,7 +2327,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.vendorName ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "vendorName", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "vendorName",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1842,7 +2342,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.amount ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "amount", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "amount",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1853,7 +2357,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarks ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarks", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarks",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1923,7 +2431,13 @@ export default function PurchasePage() {
                                 type="date"
                                 className="border p-1 rounded"
                                 value={row.poDate ?? ""}
-                                onChange={(e) => handleFieldChange(row._id, "poDate", e.target.value)}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    row._id,
+                                    "poDate",
+                                    e.target.value
+                                  )
+                                }
                               />
                             </td>
 
@@ -1933,7 +2447,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.poNumber ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "poNumber", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "poNumber",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1944,7 +2462,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.vendorName ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "vendorName", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "vendorName",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1955,7 +2477,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.leadDays ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "leadDays", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "leadDays",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1966,7 +2492,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.amount ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "amount", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "amount",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -1976,15 +2506,25 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.paymentCondition ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "paymentCondition", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "paymentCondition",
+                                    e.target.value
+                                  )
                                 }
                               >
                                 <option value="">--Select--</option>
-                                <option value="After Received">After Received</option>
-                                <option value="Before Dispatch">Before Dispatch</option>
+                                <option value="After Received">
+                                  After Received
+                                </option>
+                                <option value="Before Dispatch">
+                                  Before Dispatch
+                                </option>
                                 <option value="PWP BBD">PWP BBD</option>
                                 <option value="PWP BBD FAR">PWP BBD FAR</option>
-                                <option value="PWP BBD PAPW">PWP BBD PAPW</option>
+                                <option value="PWP BBD PAPW">
+                                  PWP BBD PAPW
+                                </option>
                               </select>
                             </td>
 
@@ -1994,7 +2534,11 @@ export default function PurchasePage() {
                                 className="border p-1 rounded"
                                 value={row.remarksPoGeneration ?? ""}
                                 onChange={(e) =>
-                                  handleFieldChange(row._id, "remarksPoGeneration", e.target.value)
+                                  handleFieldChange(
+                                    row._id,
+                                    "remarksPoGeneration",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -2002,7 +2546,9 @@ export default function PurchasePage() {
                         )}
 
                         {/* PC Follow Up */}
-                        {((selectedOption === "PC Follow Up" && pcIndex) || (selectedOption === "Payment Follow Up" && paymentKey)) && (
+                        {((selectedOption === "PC Follow Up" && pcIndex) ||
+                          (selectedOption === "Payment Follow Up" &&
+                            paymentKey)) && (
                           <>
                             {/* Common fields */}
                             <td className="px-4 py-2 border-b bg-gray-100 cursor-not-allowed">
@@ -2012,10 +2558,18 @@ export default function PurchasePage() {
                                     .replace(/\//g, "-")
                                 : ""}
                             </td>
-                            <td className="px-4 py-2 border-b">{row.poNumber}</td>
-                            <td className="px-4 py-2 border-b">{row.vendorName}</td>
-                            <td className="px-4 py-2 border-b">{row.leadDays}</td>
-                            <td className="px-4 py-2 border-b">{row.paymentCondition}</td>
+                            <td className="px-4 py-2 border-b">
+                              {row.poNumber}
+                            </td>
+                            <td className="px-4 py-2 border-b">
+                              {row.vendorName}
+                            </td>
+                            <td className="px-4 py-2 border-b">
+                              {row.leadDays}
+                            </td>
+                            <td className="px-4 py-2 border-b">
+                              {row.paymentCondition}
+                            </td>
 
                             {/* Transaction Number (Payment Follow Up only) */}
                             {selectedOption === "Payment Follow Up" && (
@@ -2023,9 +2577,16 @@ export default function PurchasePage() {
                                 <input
                                   type="text"
                                   className="border p-1 rounded"
-                                  value={row[`transactionNoPayment${paymentKey}`] ?? ""}
+                                  value={
+                                    row[`transactionNoPayment${paymentKey}`] ??
+                                    ""
+                                  }
                                   onChange={(e) =>
-                                    handleFieldChange(row._id, `transactionNoPayment${paymentKey}`, e.target.value)
+                                    handleFieldChange(
+                                      row._id,
+                                      `transactionNoPayment${paymentKey}`,
+                                      e.target.value
+                                    )
                                   }
                                 />
                               </td>
@@ -2135,7 +2696,11 @@ export default function PurchasePage() {
                               className="border p-1 rounded"
                               value={row.grnToStore ?? ""}
                               onChange={(e) =>
-                                handleFieldChange(row._id, "grnToStore", e.target.value)
+                                handleFieldChange(
+                                  row._id,
+                                  "grnToStore",
+                                  e.target.value
+                                )
                               }
                             >
                               <option value="">--Select--</option>
@@ -2149,18 +2714,19 @@ export default function PurchasePage() {
                   </>
                 ))}
               </tbody>
-
             </table>
           </div>
         </motion.div>
 
         {/* ------- RIGHT ALIGNED SUBMIT BUTTON ------- */}
-        <div className="flex justify-end">
+        <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={handleSubmitUpdates}
             disabled={saving}
-            className={`mt-6 px-6 py-3 text-lg rounded-xl shadow-md transition ${
-              saving ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"
+            className={`px-6 py-3 text-lg rounded-xl shadow-lg transition save-btn ${
+              saving
+                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
             {saving ? "SAVING..." : "SUBMIT UPDATES"}
