@@ -5,7 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import AddUserPage from "./pages/AddUserPage";
 import PurchasePage from "./pages/PurchasePage";
 import TransportPage from "./pages/TransportPage";
-PurchasePage
+
 const App = () => {
   return (
       <BrowserRouter>
