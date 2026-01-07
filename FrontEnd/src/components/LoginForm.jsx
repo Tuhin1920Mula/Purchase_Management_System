@@ -72,6 +72,13 @@ export default function LoginForm() {
       setIsLoggedIn(true);
       localStorage.setItem("role", "PC");
       localStorage.setItem("username", username);
+    } else if (success === "Store Incharge") {
+      setRole("Store Incharge");
+      setIsLoggedIn(true);
+      localStorage.setItem("role", "Store Incharge");
+      localStorage.setItem("username", username);
+    } else {
+      setError("error");
     }
   };
 
@@ -86,6 +93,8 @@ export default function LoginForm() {
     //return <Transport />;
     return <PurchasePage />;
   } else if (isLoggedIn && role === "ADMIN") {
+    return <PurchasePage />;
+  } else if (isLoggedIn && role === "Store Incharge") {
     return <PurchasePage />;
   }
 

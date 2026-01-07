@@ -5,6 +5,8 @@ import connectDB from "./config/db.js";
 import loginRoutes from "./routes/login.routes.js";
 import adduserRoutes from "./routes/adduser.routes.js";
 import transportRoutes from "./routes/transport.routes.js";
+import User from "./models/user.model.js";
+import bcrypt from "bcrypt";
 
 // Routes
 //import loginRoutes from "./routes/login.routes.js";
@@ -24,6 +26,11 @@ const ensureDBConnection = async () => {
 
   try {
     await connectDB();
+
+    // ===============================
+    // ✅ Seed default Store users (idempotent)
+    // ===============================
+
     isConnected = true;
     console.log("✅ MongoDB connected successfully");
   } catch (err) {

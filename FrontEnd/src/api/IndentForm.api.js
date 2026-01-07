@@ -106,10 +106,11 @@ export const updatePurchaseRow = async (id, updatedData) => {
     //const response = await axios.put(`/indent/purchase/update/${id}`, updatedData);
     const response = await apiRequest(`/indent/purchase/update/${id}`, "PUT", updatedData);
 
-    console.log("✅ Backend Response:", response.data);
+    // apiRequest() returns already-parsed JSON (not an axios response)
+    console.log("✅ Backend Response:", response);
     console.log("===============================================");
 
-    return response.data;
+    return response;
   } catch (error) {
     console.error("❌ Error updating purchase row:", error);
     throw error;
@@ -130,10 +131,11 @@ export const updateLocalPurchaseRow = async (id, updatedData) => {
     //const response = await axios.put(`/indent/purchase/update/${id}`, updatedData);
     const response = await apiRequest(`/indent/localpurchase/update/${id}`, "PUT", updatedData);
 
-    console.log("✅ Backend Response:", response.data);
+    // apiRequest() returns already-parsed JSON (not an axios response)
+    console.log("✅ Backend Response:", response);
     console.log("===============================================");
 
-    return response.data;
+    return response;
   } catch (error) {
     console.error("❌ Error updating purchase row:", error);
     throw error;
@@ -195,3 +197,14 @@ export async function rejectIndentForm(indentId, rejectionData) {
   console.log(`❌ Rejecting Indent Form → ID: ${indentId}`, rejectionData);
   return await apiRequest(`/indent/${indentId}/reject`, "POST", rejectionData);
 }
+
+// ==============================
+// 🔍 Store Manual Close helpers
+// ==============================
+export const getPurchaseByUniqueId = async (uniqueId) => {
+  return apiRequest(`/indent/by-uniqueid/${encodeURIComponent(uniqueId)}`, "GET");
+};
+
+export const manualCloseStoreUniqueId = async ({ uniqueId, closedBy, reason }) => {
+  return apiRequest(`/indent/store/manual-close`, "POST", { uniqueId, closedBy, reason });
+};

@@ -10,13 +10,13 @@ import {
   updatePurchase,
   updateLocalPurchase,
   getIndentFormById,
+  getIndentFormByUniqueId,
+  manualCloseStoreByUniqueId,
   updateIndentForm,
   deleteIndentForm,
   uploadComparisonPDF,   // ✅ UNCOMMENT / ADD THIS
   approveIndentForm,
   rejectIndentForm,
-  showAllIndentForms,
-  add_to_localPurchase,
 } from "../controllers/purchase.controller.js";
 
 const router = express.Router();
@@ -38,21 +38,14 @@ const upload = multer({
 
 /* ------------------ Routes ------------------ */
 router.post("/", createIndentForm);
-router.post("/all", getAllIndentForms);
-router.get("/all", showAllIndentForms);
-//router.get("/", getAllIndentForms);
-
-
 router.post("/localpurchase", createLocalPurchaseForm);
+//router.get("/", getAllIndentForms);
+router.post("/all", getAllIndentForms);
 router.post("/localpurchase/all", getAllLocalPurchaseForms);
-router.get("/latest/localpurchase/unique-id", getLatestLocalPurchaseUniqueId);
-router.put("/localpurchase/update/:id", updateLocalPurchase);
-router.post("/add-to-localPurchase", add_to_localPurchase);
-
-
-
 router.get("/latest/unique-id", getLatestUniqueId);
+router.get("/latest/localpurchase/unique-id", getLatestLocalPurchaseUniqueId);
 router.put("/purchase/update/:id", updatePurchase);
+router.put("/localpurchase/update/:id", updateLocalPurchase);
 // router.put("/purchase/update/:id", (req, res, next) => {
 //   console.log("===============================================");
 //   console.log("📥 PURCHASE UPDATE ROUTE HIT");
@@ -63,6 +56,8 @@ router.put("/purchase/update/:id", updatePurchase);
 
 //   next(); // continue to actual controller: updatePurchase
 // }, updatePurchase);
+router.get("/by-uniqueid/:uniqueId", getIndentFormByUniqueId);
+router.post("/store/manual-close", manualCloseStoreByUniqueId);
 router.get("/:id", getIndentFormById);
 router.put("/:id", updateIndentForm);
 router.delete("/:id", deleteIndentForm);
